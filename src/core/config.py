@@ -70,5 +70,5 @@ def get_settings() -> Settings:
     """Singleton getter for application settings."""
     global _settings
     if _settings is None:
-        _settings = Settings()  # type: ignore[call-arg]
+        _settings = Settings()
     return _settings
