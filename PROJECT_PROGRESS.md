@@ -8,8 +8,8 @@ This document tracks the progress, status, verification evidence, and known issu
 
 | Phase | Description | Milestone | Tier | Status | Completed Date | Commit Hash |
 |---|---|---|---|---|---|---|
-| Phase 1 | Repository Architecture & Setup | Milestone 1 | Tier A | In Progress | - | - |
-| Phase 2 | Configuration Management | Milestone 1 | Tier A | Pending | - | - |
+| Phase 1 | Repository Architecture & Setup | Milestone 1 | Tier A | Completed | 2026-08-07 | `2acfa0d` |
+| Phase 2 | Configuration Management | Milestone 1 | Tier A | In Progress | - | - |
 | Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Pending | - | - |
@@ -35,12 +35,16 @@ This document tracks the progress, status, verification evidence, and known issu
 ## Detailed Phase Log
 
 ### Phase 1: Repository Architecture & Setup
-- **Status:** In Progress (Awaiting Python 3.12+ installation and re-verification of all 6 commands)
+- **Status:** Completed
+- **Date:** 2026-08-07
+- **Commit:** `2acfa0d` (`chore: initialize project structure and tooling`)
+- **Verification Evidence:** `py -3.12 tasks.py install`, `lint`, `test`, `git status`, `git ls-files`, pre-commit hooks passed.
+
+### Phase 2: Configuration Management
+- **Status:** In Progress (Implementation & tests complete; awaiting terminal execution output)
 - **Date:** 2026-08-07
 - **Commit:** Pending
-- **Verification Evidence:** Pending raw terminal execution output on Python 3.12+ environment.
-- **ADRs Created:** [`docs/adr/0001-use-tasks-py-over-makefile.md`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0001-use-tasks-py-over-makefile.md)
-- **Known Issues & Remaining Risks:**
-  1. **Makefile Deletion:** `Makefile` is committed in git index and must be deleted via `git rm Makefile`.
-  2. **Python Environment Verification:** `pyproject.toml` requires Python `>=3.12` per Master Contract Section 3. Environment currently needs Python 3.12+ installed to re-run all 6 verification commands.
-- **Next Phase:** Phase 2 (Configuration Management)
+- **Verification Evidence:** Pending raw terminal execution output.
+- **ADRs Created:** None for Phase 2.
+- **Known Issues:** None.
+- **Next Phase:** Phase 3 (Logging & Observability Baseline)
