@@ -8,7 +8,7 @@ This document tracks the progress, status, verification evidence, and known issu
 
 | Phase | Description | Milestone | Tier | Status | Completed Date | Commit Hash |
 |---|---|---|---|---|---|---|
-| Phase 1 | Repository Architecture & Setup | Milestone 1 | Tier A | Completed | 2026-08-07 | `chore: initialize project structure and tooling` |
+| Phase 1 | Repository Architecture & Setup | Milestone 1 | Tier A | In Progress | - | - |
 | Phase 2 | Configuration Management | Milestone 1 | Tier A | Pending | - | - |
 | Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Pending | - | - |
@@ -35,15 +35,12 @@ This document tracks the progress, status, verification evidence, and known issu
 ## Detailed Phase Log
 
 ### Phase 1: Repository Architecture & Setup
-- **Status:** Completed
+- **Status:** In Progress (Awaiting Python 3.12+ installation and re-verification of all 6 commands)
 - **Date:** 2026-08-07
-- **Commit:** `chore: initialize project structure and tooling`
-- **Verification Evidence:**
-  - `python tasks.py install`: Editable package (`telco-churn-mlops-0.1.0`) installed, `.git` repository initialized, pre-commit hooks installed.
-  - `python tasks.py lint`: All 4 linters (`flake8`, `black`, `isort`, `mypy`) passed clean across all source and test modules.
-  - `python tasks.py test`: Pytest executed cleanly across `tests/` path (0 tests collected for scaffolding stage).
-  - `git status` & `git ls-files`: Clean repository tree verified matching Section 4 of Master Contract.
-  - Trial commit: All pre-commit hooks (`trim-trailing-whitespace`, `fix-end-of-files`, `check-yaml`, `check-added-large-files`, `black`, `isort`, `flake8`, `mypy`) initialized and executed during commit.
+- **Commit:** Pending
+- **Verification Evidence:** Pending raw terminal execution output on Python 3.12+ environment.
 - **ADRs Created:** [`docs/adr/0001-use-tasks-py-over-makefile.md`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0001-use-tasks-py-over-makefile.md)
-- **Known Issues:** None.
+- **Known Issues & Remaining Risks:**
+  1. **Makefile Deletion:** `Makefile` is committed in git index and must be deleted via `git rm Makefile`.
+  2. **Python Environment Verification:** `pyproject.toml` requires Python `>=3.12` per Master Contract Section 3. Environment currently needs Python 3.12+ installed to re-run all 6 verification commands.
 - **Next Phase:** Phase 2 (Configuration Management)

@@ -7,7 +7,7 @@ name = "telco-churn-mlops"
 version = "0.1.0"
 description = "Production-Grade Customer Churn Prediction ML Platform"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     { name = "MLOps Team" }
 ]
@@ -45,7 +45,7 @@ test = [
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.isort]
@@ -54,7 +54,7 @@ line_length = 88
 multi_line_output = 3
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 files = ["src"]
 warn_return_any = true
 warn_unused_configs = true
