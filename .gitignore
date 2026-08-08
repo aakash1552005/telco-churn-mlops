@@ -51,8 +51,13 @@ htmlcov/
 mlruns/
 .dvc/cache/
 .dvc/tmp/
-data/raw/
-data/processed/
+.dvc/storage/
+data/raw/*
+!data/raw/*.dvc
+!data/raw/.gitignore
+data/processed/*
+!data/processed/*.dvc
+!data/processed/.gitignore
 models/*.joblib
 models/*.pkl
 

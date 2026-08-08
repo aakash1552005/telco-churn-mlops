@@ -10,8 +10,8 @@ This document tracks the progress, status, verification evidence, and known issu
 |---|---|---|---|---|---|---|
 | Phase 1 | Repository Architecture & Setup | Milestone 1 | Tier A | Completed | 2026-08-07 | `2acfa0d` |
 | Phase 2 | Configuration Management | Milestone 1 | Tier A | Completed | 2026-08-07 | `dbb74ec` |
-| Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Completed | 2026-08-08 | `77a3594` |
-| Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Pending | - | - |
+| Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Completed | 2026-08-08 | `02b37d1` |
+| Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | In Progress | - | - |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Pending | - | - |
 | Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Pending | - | - |
 | Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Pending | - | - |
@@ -49,14 +49,15 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 3: Logging & Observability Baseline
 - **Status:** Completed
 - **Date:** 2026-08-08
-- **Commit:** `77a3594` (`feat: add structured logging utility`)
-- **Verification Evidence:**
-  - `py -3.12 tasks.py lint`: Stray `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 9 source files.
-  - `py -3.12 tasks.py test`: 10 unit tests across `test_config.py` and `test_logging.py` passed 100% clean.
-  - `py -3.12 scripts/demo_logging.py`: Sample execution outputted DEBUG, INFO, WARNING, and ERROR records in both plain text and structured JSON formats.
-  - Pre-commit hooks: All 8 pre-commit hooks passed clean on `git commit`.
-- **ADRs Created:** None for Phase 3.
+- **Commit:** `02b37d1` (`refactor: enforce explicit field extraction and document print scope`)
+- **Verification Evidence:** `py -3.12 tasks.py lint`, `test`, `scripts/demo_logging.py`, pre-commit hooks passed.
+
+### Phase 4: Data Ingestion Pipeline
+- **Status:** In Progress (Implementation, DVC setup, and unit tests complete; awaiting terminal verification)
+- **Date:** 2026-08-08
+- **Commit:** Pending
+- **Verification Evidence:** Pending raw terminal execution output.
+- **ADRs Created:** None for Phase 4.
 - **Known Issues & Remaining Risks:**
-  1. **Correlation / Request ID Middleware Deferral:** Request correlation ID (`request_id`) propagation across log records is intentionally deferred to Phase 10 (FastAPI Security & Middleware Baseline), where API request context middleware will inject per-request correlation identifiers into the logging context.
-  2. **Log Ingestion & Aggregation Infrastructure:** Shipping structured stdout/stderr JSON logs to central monitoring (Prometheus / Grafana Loki) is unexercised until Milestone 2 (Phase 15/16).
-- **Next Phase:** Phase 4 (Data Ingestion Pipeline)
+  1. **Remote Storage S3 Backend Deferral:** DVC tracking is initialized using local storage (`.dvc/storage`). Production S3 remote storage synchronization (`dvc push`/`pull` to AWS S3 bucket) is deferred to Milestone 2 (Phase 12 AWS ECR & Infrastructure).
+- **Next Phase:** Phase 5 (Data Validation & Schema)

@@ -102,13 +102,31 @@ def task_clean() -> None:
     print("Cleaned cache directories.")
 
 
+def task_ingest() -> None:
+    """Run data ingestion and update DVC tracking."""
+    print("--- Running Data Ingestion ---")
+    from src.data.ingestion import ingest_raw_data
+
+    raw_path = ingest_raw_data()
+    print(f"Data ingestion completed: {raw_path}")
+
+    dvc_cmd = shutil.which("dvc")
+    if dvc_cmd:
+        print("--- Updating DVC tracking ---")
+        run_cmd([dvc_cmd, "add", str(raw_path)])
+        print("DVC tracking complete.")
+    else:
+        print("Note: DVC CLI not found on PATH; skipping automatic 'dvc add'.")
+
+
 def main() -> None:
+    """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
-        description="Cross-platform task runner for Telco Churn MLOps Platform."
+        description="Task runner for Telco Churn MLOps Pipeline."
     )
     parser.add_argument(
-        "task",
-        choices=["install", "lint", "format", "test", "clean"],
+        "target",
+        choices=["install", "lint", "format", "test", "clean", "ingest"],
         help="Target task to execute",
     )
     args = parser.parse_args()
@@ -119,8 +137,9 @@ def main() -> None:
         "format": task_format,
         "test": task_test,
         "clean": task_clean,
+        "ingest": task_ingest,
     }
-    tasks[args.task]()
+    tasks[args.target]()
 
 
 if __name__ == "__main__":

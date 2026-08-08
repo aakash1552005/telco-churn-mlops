@@ -20,11 +20,28 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "telco-churn-mlops"
     ENVIRONMENT: str = Field(
         ...,
-        description=(
-            "Application environment (e.g. development, staging, production)."
-        ),
+        description=("Deployment environment: 'development', 'staging', 'production'"),
     )
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = Field(
+        default="INFO", description="Logging level: DEBUG, INFO, WARNING, ERROR"
+    )
+
+    # Data Ingestion Settings (Master Contract Section 4)
+    RAW_DATA_SOURCE_TYPE: str = Field(
+        default="url",
+        description="Source type for raw dataset: 'url' or 'local'",
+    )
+    RAW_DATA_LOCATION: str = Field(
+        default=(
+            "https://raw.githubusercontent.com/IBM/"
+            "telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
+        ),
+        description="Source URL or local path for raw dataset",
+    )
+    RAW_DATA_PATH: str = Field(
+        default="data/raw/telco_churn.csv",
+        description="Target destination path for raw dataset CSV",
+    )
 
     # API & Security Settings (Section 11)
     API_HOST: str = "0.0.0.0"
