@@ -54,6 +54,24 @@ def test_validate_data_valid_passes(valid_df: pd.DataFrame, tmp_path: Path) -> N
     assert report_file.exists()
 
 
+def test_validate_data_detects_blank_string_counts(
+    valid_df: pd.DataFrame, tmp_path: Path
+) -> None:
+    """Test detection of whitespace-only blank strings in string columns."""
+    corrupted_df = valid_df.copy()
+    corrupted_df.loc[0, "TotalCharges"] = "   "
+    report_file = tmp_path / "report_blank_strings.json"
+
+    report = validate_data(
+        corrupted_df,
+        dataset_sha256="hash_blank_test",
+        report_path=report_file,
+    )
+
+    assert report["summary"]["validation_status"] == "PASSED"
+    assert report["summary"]["blank_string_counts"] == {"TotalCharges": 1}
+
+
 def test_validate_data_missing_column_fails(
     valid_df: pd.DataFrame, tmp_path: Path
 ) -> None:

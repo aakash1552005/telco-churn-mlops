@@ -69,6 +69,7 @@ def load_schema_config(schema_path: Optional[Path] = None) -> Dict[str, Any]:
 def validate_data(
     df: pd.DataFrame,
     dataset_sha256: str = "",
+    source_location: str = "",
     schema_path: Optional[Path] = None,
     report_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
@@ -77,6 +78,7 @@ def validate_data(
     Args:
         df: Input DataFrame to validate.
         dataset_sha256: SHA-256 checksum of raw dataset for traceability.
+        source_location: Source URL or path for dataset provenance.
         schema_path: Path to schema.yaml.
         report_path: Path to output JSON report.
 
@@ -95,6 +97,7 @@ def validate_data(
     schema_cols_dict = schema.get("columns", {})
     expected_cols = set(schema_cols_dict.keys())
     actual_cols = set(df.columns)
+    source_url = source_location or settings.RAW_DATA_LOCATION
 
     logger.info(
         "Data validation process started",
@@ -182,8 +185,10 @@ def validate_data(
             rules_passed += 1
 
     # -------------------------------------------------------------------------
-    # 2. COMPLETENESS VALIDATION
+    # 2. COMPLETENESS & BLANK STRING DETECTION VALIDATION
     # -------------------------------------------------------------------------
+    blank_string_counts: Dict[str, int] = {}
+
     for col, col_rules in schema_cols_dict.items():
         if col not in df.columns:
             continue
@@ -205,6 +210,32 @@ def validate_data(
             )
         else:
             rules_passed += 1
+
+        # Check for whitespace-only blank strings in string columns
+        if col_rules.get("type") == "string":
+            blank_mask = df[col].astype(str).str.strip().eq("")
+            blank_count = int(blank_mask.sum())
+            if blank_count > 0:
+                blank_string_counts[col] = blank_count
+                logger.warning(
+                    "Blank whitespace-only string values detected",
+                    extra={
+                        "affected_column": col,
+                        "blank_string_count": blank_count,
+                    },
+                )
+                if col_rules.get("disallow_blank_strings", False):
+                    failed_rules.append(
+                        {
+                            "rule_name": "no_blank_strings",
+                            "affected_column": col,
+                            "failure_count": blank_count,
+                            "observed_value": (
+                                f"{blank_count} blank/whitespace strings"
+                            ),
+                            "expected_constraint": ("0 blank/whitespace strings"),
+                        }
+                    )
 
     # -------------------------------------------------------------------------
     # 3. INTEGRITY VALIDATION
@@ -309,7 +340,9 @@ def validate_data(
             "rules_passed": rules_passed,
             "rules_failed": len(failed_rules),
             "schema_version": schema_version,
+            "source_dataset": source_url,
             "dataset_sha256": dataset_sha256,
+            "blank_string_counts": blank_string_counts,
             "timestamp": now_iso,
         },
         "failed_rules": failed_rules,
@@ -341,6 +374,7 @@ def validate_data(
             "rules_passed": rules_passed,
             "rules_failed": len(failed_rules),
             "schema_version": schema_version,
+            "blank_string_counts": blank_string_counts,
             "report_path": str(target_report_path),
         },
     )

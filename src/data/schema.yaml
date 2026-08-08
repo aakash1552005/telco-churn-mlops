@@ -88,8 +88,12 @@ columns:
     min_value: 0.0
     max_null_rate: 0.0
   TotalCharges:
+    # Note: Raw IBM Telco CSV delivers TotalCharges as string due to 11 empty space
+    # values (" ") for zero-tenure customers. Numeric casting and missing value
+    # imputation are intentionally deferred to Phase 6 (Feature Engineering).
     type: "string"
     max_null_rate: 0.0
+    flag_blank_strings: true
   Churn:
     type: "string"
     allowed_values: ["Yes", "No"]
