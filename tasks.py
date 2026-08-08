@@ -32,7 +32,14 @@ def task_install() -> None:
 
 
 def check_no_print() -> None:
-    """Ensure no bare print() statements exist in src/."""
+    """Ensure no bare print() statements exist in src/ application codebase.
+
+    Enforcement Scope:
+        - src/: Strictly enforced. All production code, pipeline modules, and core
+          utilities must use get_logger(__name__) instead of bare print().
+        - scripts/, tests/, tasks.py: Excluded. CLI helper tools, test drivers, and
+          task runner routines legitimately write formatted console output to terminal.
+    """
     print("--- Checking for bare print() statements in src/ ---")
     stray_prints = []
     for py_file in (PROJECT_ROOT / "src").rglob("*.py"):

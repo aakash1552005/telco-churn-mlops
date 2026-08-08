@@ -8,7 +8,7 @@ USAGE:
     logger.error("Validation failed", extra={"missing_columns": ["tenure"]})
 
 LOGGING CONVENTIONS:
-    - Every module MUST obtain a logger via `get_logger(__name__)`.
+    - Every module in `src/` MUST obtain a logger via `get_logger(__name__)`.
     - Do NOT use bare `print()` statements anywhere in `src/`.
 
 LOG LEVELS GUIDANCE:
@@ -23,7 +23,7 @@ PII & SECURITY CONSTRAINTS (MANDATORY):
     - NEVER log PII such as customer names, emails, phone numbers,
       street addresses, or payment details.
     - Future modules MUST explicitly select and sanitize fields to log.
-    - Arbitrary `extra=` context is supported for non-PII identifiers.
+    - Arbitrary `extra=` context is supported for non-PII primitives.
 """
 
 import json
@@ -33,7 +33,7 @@ from typing import Any, Dict, Optional
 
 from src.core.config import get_settings
 
-# Built-in attributes of logging.LogRecord to exclude from extra fields
+# Built-in attributes of logging.LogRecord to exclude when extracting extra fields
 STANDARD_LOG_RECORD_ATTRS = {
     "name",
     "msg",
@@ -58,11 +58,15 @@ STANDARD_LOG_RECORD_ATTRS = {
     "taskName",
 }
 
+# Allowed primitive types for extra context fields to prevent PII / object dumping
+ALLOWED_EXTRA_TYPES = (int, float, str, bool, type(None))
+
 
 class JSONFormatter(logging.Formatter):
-    """Formatter emitting single-line JSON log records with extra context."""
+    """Formatter emitting single-line JSON log records with explicit fields."""
 
     def format(self, record: logging.LogRecord) -> str:
+        # Explicit field-by-field dictionary construction
         log_data: Dict[str, Any] = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
@@ -71,20 +75,21 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
-        # Include exception info if present
+        # Include formatted exception trace if present
         if record.exc_info:
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
             log_data["exception"] = record.exc_text
 
-        # Safely extract custom extra fields passed via extra={...}
-        for key, val in record.__dict__.items():
-            if key not in STANDARD_LOG_RECORD_ATTRS:
-                try:
-                    json.dumps(val)
-                    log_data[key] = val
-                except (TypeError, OverflowError):
-                    log_data[key] = str(val)
+        # Explicitly extract non-standard extra fields, filtering for primitive types
+        for attr_name, attr_val in record.__dict__.items():
+            if attr_name not in STANDARD_LOG_RECORD_ATTRS:
+                if isinstance(attr_val, ALLOWED_EXTRA_TYPES):
+                    log_data[attr_name] = attr_val
+                elif isinstance(attr_val, (list, tuple)):
+                    # Allow lists/tuples of primitives
+                    if all(isinstance(elem, ALLOWED_EXTRA_TYPES) for elem in attr_val):
+                        log_data[attr_name] = list(attr_val)
 
         return json.dumps(log_data)
 

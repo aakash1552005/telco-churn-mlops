@@ -33,7 +33,7 @@ def test_json_formatter_emits_required_fields() -> None:
 
 
 def test_json_formatter_includes_extra_context() -> None:
-    """Assert custom extra fields passed to logger are included in JSON."""
+    """Assert custom primitive extra fields passed to logger are included."""
     formatter = JSONFormatter()
     record = logging.LogRecord(
         name="test_logger",
@@ -52,6 +52,32 @@ def test_json_formatter_includes_extra_context() -> None:
 
     assert log_dict["dataset_name"] == "telco_churn"
     assert log_dict["row_count"] == 7043
+
+
+def test_json_formatter_ignores_complex_unallowed_objects() -> None:
+    """Assert complex arbitrary objects in extra fields are filtered out."""
+
+    class RawCustomerPayload:
+        pass
+
+    formatter = JSONFormatter()
+    record = logging.LogRecord(
+        name="test_logger",
+        level=logging.INFO,
+        pathname="src/data/ingest.py",
+        lineno=15,
+        msg="Processing customer payload",
+        args=(),
+        exc_info=None,
+    )
+    record.raw_payload = RawCustomerPayload()  # type: ignore[attr-defined]
+    record.safe_id = "cust-99"  # type: ignore[attr-defined]
+
+    formatted_output = formatter.format(record)
+    log_dict = json.loads(formatted_output)
+
+    assert "raw_payload" not in log_dict
+    assert log_dict["safe_id"] == "cust-99"
 
 
 def test_logger_factory_returns_configured_logger() -> None:
