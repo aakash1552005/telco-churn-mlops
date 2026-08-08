@@ -53,6 +53,24 @@ class Settings(BaseSettings):
         description="Destination path for JSON validation report artifact",
     )
 
+    # Feature Engineering Settings (Master Contract Section 6)
+    PROCESSED_DATA_DIR: str = Field(
+        default="data/processed",
+        description="Directory path for storing processed train/test datasets",
+    )
+    FEATURE_PIPELINE_PATH: str = Field(
+        default="models/feature_pipeline.joblib",
+        description="Destination path for serialized feature pipeline artifact",
+    )
+    TEST_SIZE: float = Field(
+        default=0.2,
+        description="Test split ratio for train/test dataset splitting",
+    )
+    RANDOM_STATE: int = Field(
+        default=42,
+        description="Random seed for deterministic data splitting",
+    )
+
     # API & Security Settings (Section 11)
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000

@@ -12,8 +12,8 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 2 | Configuration Management | Milestone 1 | Tier A | Completed | 2026-08-07 | `dbb74ec` |
 | Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Completed | 2026-08-08 | `02b37d1` |
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
-| Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `a01cfd0` |
-| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Pending | - | - |
+| Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
+| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | In Progress | - | - |
 | Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
@@ -61,16 +61,22 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 5: Data Validation & Schema
 - **Status:** Completed
 - **Date:** 2026-08-08
-- **Commit:** `a01cfd0` (`feat: add data validation layer`)
+- **Commit:** `06ad219` (`feat: add blank string detection to validation report`)
 - **Verification Evidence:**
-  - Data-Driven Schema Config: [`src/data/schema.yaml`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/schema.yaml) (`schema_version: "1.0.0"`, `allow_extra_columns: false`).
-  - `py -3.12 tasks.py lint`: Stray `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 11 source files.
-  - `py -3.12 tasks.py test`: All 21 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, and `test_validation.py` passed 100% clean in 6.12s.
-  - `py -3.12 tasks.py validate`: Validated real raw dataset (`data/raw/telco_churn.csv`). Saved JSON report to `reports/validation_report.json` with matching dataset SHA-256 hash.
+  - Data-Driven Schema Config: [`src/data/schema.yaml`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/schema.yaml) (`schema_version: "1.0.0"`, `allow_extra_columns: false`, `flag_blank_strings: true`).
+  - `py -3.12 tasks.py lint`: Bare `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 11 source files.
+  - `py -3.12 tasks.py test`: All 22 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, and `test_validation.py` passed 100% clean in 6.06s.
+  - `py -3.12 tasks.py validate`: Validated raw dataset (`data/raw/telco_churn.csv`). Saved JSON report to `reports/validation_report.json` with matching dataset SHA-256 hash and `blank_string_counts: {"TotalCharges": 11}`.
   - `py -3.12 scripts/demo_validation.py`: Confirmed real dataset passed (65 rules passed, 0 failed), and 4 corrupted fixtures (Missing Column, Invalid Domain Value, Duplicate customerID, Extra Unknown Column) failed loudly with exact `DataValidationError` exception details.
   - Pre-commit hooks: All 8 pre-commit hooks passed clean on `git commit`.
-- **ADRs Created:** None for Phase 5.
+
+### Phase 6: DVC & Feature Engineering
+- **Status:** In Progress (Implementation complete; awaiting terminal execution & verification)
+- **Date:** 2026-08-08
+- **Commit:** Pending
+- **Verification Evidence:** Pending raw terminal execution output.
+- **ADRs Created:** None for Phase 6.
 - **Known Issues & Remaining Risks:**
-  1. **Strict Unknown Column Rejection Policy:** `allow_extra_columns: false` enforces immediate failure if upstream data providers add unannounced columns. Adding legitimate new features to the raw dataset will require updating `schema.yaml` to bump `schema_version`.
-  2. **TotalCharges String Encoding:** The raw dataset encodes `TotalCharges` as strings due to 11 empty space values (`" "`) for zero-tenure customers. Schema validation treats `TotalCharges` as string type; numerical casting and missing value imputation will occur in Phase 6 (Feature Engineering).
-- **Next Phase:** Phase 6 (DVC & Feature Engineering)
+  1. **One-Hot Encoding Dimensionality:** `OneHotEncoder(handle_unknown="ignore", sparse_output=False)` expands categorical features into binary columns. If new categories appear in future data streams, `handle_unknown="ignore"` zero-encodes them safely, but feature counts must remain consistent across training and inference.
+  2. **Imputation Value Assumption:** `TotalChargesImputer` imputes blank strings (`" "`) to `0.0` float based on `tenure == 0`. If an upstream pipeline change introduces blank `TotalCharges` for customers with `tenure > 0`, `0.0` imputation could introduce subtle target bias; explicit monitoring of `blank_string_counts` from Phase 5 remains essential.
+- **Next Phase:** Phase 7 (Model Training Pipeline)

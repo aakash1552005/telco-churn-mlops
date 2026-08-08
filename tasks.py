@@ -139,6 +139,33 @@ def task_validate() -> None:
     )
 
 
+def task_features() -> None:
+    """Run feature engineering pipeline on raw dataset."""
+    print("--- Running Feature Engineering Pipeline ---")
+    from pathlib import Path
+
+    import pandas as pd
+
+    from src.core.config import get_settings
+    from src.data.features import process_and_save_features
+
+    raw_path = Path(get_settings().RAW_DATA_PATH)
+    if not raw_path.exists():
+        print(
+            f"Error: Raw dataset not found at '{raw_path}'. "
+            f"Run 'py -3.12 tasks.py ingest' first."
+        )
+        sys.exit(1)
+
+    df_raw = pd.read_csv(raw_path)
+    X_tr, X_te, y_tr, y_te, pipe = process_and_save_features(df_raw)
+    print("Feature engineering pipeline completed successfully.")
+    print(f"Processed train set shape: {X_tr.shape}")
+    print(f"Processed test set shape: {X_te.shape}")
+    print(f"Serialized pipeline: '{get_settings().FEATURE_PIPELINE_PATH}'")
+    print(f"Processed datasets directory: '{get_settings().PROCESSED_DATA_DIR}'")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -154,6 +181,7 @@ def main() -> None:
             "clean",
             "ingest",
             "validate",
+            "features",
         ],
         help="Target task to execute",
     )
@@ -167,6 +195,7 @@ def main() -> None:
         "clean": task_clean,
         "ingest": task_ingest,
         "validate": task_validate,
+        "features": task_features,
     }
     tasks[args.target]()
 
