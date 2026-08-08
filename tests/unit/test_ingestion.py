@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data.ingestion import calculate_md5, calculate_sha256, ingest_raw_data
+from src.data.ingestion import calculate_sha256, ingest_raw_data
 
 
 @pytest.fixture
@@ -71,25 +71,6 @@ def test_ingest_raw_data_schema_and_dtypes(
     assert "Churn" in df.columns
     assert df["tenure"].dtype == "int64"
     assert df["MonthlyCharges"].dtype == "float64"
-
-
-def test_ingest_raw_data_dvc_pointer_file(
-    sample_csv_path: Path, tmp_path: Path
-) -> None:
-    """Test creation of DVC pointer file (.dvc) matching dataset MD5."""
-    target_csv = tmp_path / "data" / "raw" / "telco_churn.csv"
-    ingest_raw_data(
-        source_type="local",
-        source_location=str(sample_csv_path),
-        target_path=target_csv,
-    )
-
-    dvc_file = target_csv.with_suffix(".csv.dvc")
-    assert dvc_file.exists()
-
-    dvc_content = dvc_file.read_text(encoding="utf-8")
-    expected_md5 = calculate_md5(target_csv)
-    assert expected_md5 in dvc_content
 
 
 def test_ingest_raw_data_idempotency(sample_csv_path: Path, tmp_path: Path) -> None:

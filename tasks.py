@@ -110,14 +110,6 @@ def task_ingest() -> None:
     raw_path = ingest_raw_data()
     print(f"Data ingestion completed: {raw_path}")
 
-    dvc_cmd = shutil.which("dvc")
-    if dvc_cmd:
-        print("--- Updating DVC tracking ---")
-        run_cmd([dvc_cmd, "add", str(raw_path)])
-        print("DVC tracking complete.")
-    else:
-        print("Note: DVC CLI not found on PATH; skipping automatic 'dvc add'.")
-
 
 def main() -> None:
     """Main CLI entrypoint."""

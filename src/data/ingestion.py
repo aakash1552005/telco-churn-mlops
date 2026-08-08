@@ -6,6 +6,7 @@ Customer Churn dataset into `data/raw/telco_churn.csv` tracked by DVC.
 
 import hashlib
 import shutil
+import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -34,46 +35,29 @@ def calculate_sha256(file_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def calculate_md5(file_path: Path) -> str:
-    """Calculate MD5 checksum of a file for DVC tracking verification.
+def track_with_dvc(file_path: Path) -> None:
+    """Invoke real `dvc add` command to generate and manage .dvc metadata.
 
     Args:
-        file_path: Path to the target file.
-
-    Returns:
-        Hexadecimal MD5 hash string.
+        file_path: Path to the dataset file to track with DVC.
     """
-    md5_hash = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(65536), b""):
-            md5_hash.update(byte_block)
-    return md5_hash.hexdigest()
-
-
-def create_dvc_pointer_file(file_path: Path) -> Path:
-    """Create or update DVC pointer file (.dvc) for target dataset file.
-
-    Args:
-        file_path: Path to the dataset file.
-
-    Returns:
-        Path to the created .dvc pointer file.
-    """
-    md5_val = calculate_md5(file_path)
-    file_size = file_path.stat().st_size
-    dvc_file_path = file_path.with_suffix(file_path.suffix + ".dvc")
-
-    dvc_content = (
-        f"outs:\n"
-        f"- md5: {md5_val}\n"
-        f"  size: {file_size}\n"
-        f"  hash: md5\n"
-        f"  path: {file_path.name}\n"
+    dvc_exe = shutil.which("dvc") or "dvc"
+    logger.info(
+        "Executing real DVC CLI tracking", extra={"command": f"dvc add {file_path}"}
     )
-    with open(dvc_file_path, "w", encoding="utf-8") as f:
-        f.write(dvc_content)
-
-    return dvc_file_path
+    result = subprocess.run(
+        [dvc_exe, "add", str(file_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        logger.warning(
+            "DVC add command returned non-zero exit code",
+            extra={"stderr": result.stderr.strip()},
+        )
+    else:
+        logger.info("DVC tracking updated successfully via real DVC CLI")
 
 
 def ingest_raw_data(
@@ -84,7 +68,7 @@ def ingest_raw_data(
     """Ingest raw Telco Churn dataset from URL or local path.
 
     Idempotent operation: re-running overwrites target file cleanly without
-    data corruption and computes reproducible SHA-256 and MD5 dataset checksums.
+    data corruption, logs dataset reproducibility metadata, and updates DVC.
 
     Args:
         source_type: 'url' or 'local' (defaults to Settings.RAW_DATA_SOURCE_TYPE).
@@ -131,28 +115,32 @@ def ingest_raw_data(
 
     # Verification & Reproducibility Analysis
     sha256_checksum = calculate_sha256(dst_path)
-    md5_checksum = calculate_md5(dst_path)
 
     df = pd.read_csv(dst_path)
     row_count = len(df)
     col_count = len(df.columns)
     columns_list = list(df.columns)
 
-    # Create/update DVC tracking pointer file
-    dvc_file = create_dvc_pointer_file(dst_path)
-
+    # Detailed Dataset Verification Logging
+    log_msg = (
+        f"Raw dataset ingested and verified. Source: {src_loc} | "
+        f"SHA-256: {sha256_checksum} | Rows: {row_count} | Cols: {col_count} | "
+        f"Columns: {columns_list}"
+    )
     logger.info(
-        "Raw dataset ingestion and verification successful",
+        log_msg,
         extra={
+            "source_url": src_loc,
             "target_path": str(dst_path),
             "sha256_checksum": sha256_checksum,
-            "dvc_md5_hash": md5_checksum,
-            "dvc_pointer_file": str(dvc_file),
             "row_count": row_count,
             "column_count": col_count,
             "columns": columns_list,
         },
     )
+
+    # Invoke real `dvc add` CLI tool
+    track_with_dvc(dst_path)
 
     logger.info("Data ingestion completed successfully")
     return dst_path
