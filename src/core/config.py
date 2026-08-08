@@ -43,6 +43,16 @@ class Settings(BaseSettings):
         description="Target destination path for raw dataset CSV",
     )
 
+    # Data Validation Settings (Master Contract Section 5)
+    SCHEMA_FILE_PATH: str = Field(
+        default="src/data/schema.yaml",
+        description="Path to validation schema YAML configuration file",
+    )
+    VALIDATION_REPORT_PATH: str = Field(
+        default="reports/validation_report.json",
+        description="Destination path for JSON validation report artifact",
+    )
+
     # API & Security Settings (Section 11)
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000

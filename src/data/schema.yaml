@@ -1,0 +1,99 @@
+schema_version: "1.0.0"
+dataset_name: "telco_customer_churn"
+
+# Reject unknown/extra columns by default (fail loudly on upstream schema changes)
+allow_extra_columns: false
+
+# Column Schema, Completeness, and Domain Validation Rules
+columns:
+  customerID:
+    type: "string"
+    unique: true
+    max_null_rate: 0.0
+  gender:
+    type: "string"
+    allowed_values: ["Female", "Male"]
+    max_null_rate: 0.0
+  SeniorCitizen:
+    type: "int"
+    allowed_values: [0, 1]
+    max_null_rate: 0.0
+  Partner:
+    type: "string"
+    allowed_values: ["Yes", "No"]
+    max_null_rate: 0.0
+  Dependents:
+    type: "string"
+    allowed_values: ["Yes", "No"]
+    max_null_rate: 0.0
+  tenure:
+    type: "int"
+    min_value: 0
+    max_null_rate: 0.0
+  PhoneService:
+    type: "string"
+    allowed_values: ["Yes", "No"]
+    max_null_rate: 0.0
+  MultipleLines:
+    type: "string"
+    allowed_values: ["Yes", "No", "No phone service"]
+    max_null_rate: 0.0
+  InternetService:
+    type: "string"
+    allowed_values: ["DSL", "Fiber optic", "No"]
+    max_null_rate: 0.0
+  OnlineSecurity:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  OnlineBackup:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  DeviceProtection:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  TechSupport:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  StreamingTV:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  StreamingMovies:
+    type: "string"
+    allowed_values: ["Yes", "No", "No internet service"]
+    max_null_rate: 0.0
+  Contract:
+    type: "string"
+    allowed_values: ["Month-to-month", "One year", "Two year"]
+    max_null_rate: 0.0
+  PaperlessBilling:
+    type: "string"
+    allowed_values: ["Yes", "No"]
+    max_null_rate: 0.0
+  PaymentMethod:
+    type: "string"
+    allowed_values: [
+      "Electronic check",
+      "Mailed check",
+      "Bank transfer (automatic)",
+      "Credit card (automatic)"
+    ]
+    max_null_rate: 0.0
+  MonthlyCharges:
+    type: "float"
+    min_value: 0.0
+    max_null_rate: 0.0
+  TotalCharges:
+    type: "string"
+    max_null_rate: 0.0
+  Churn:
+    type: "string"
+    allowed_values: ["Yes", "No"]
+    max_null_rate: 0.0
+
+integrity_rules:
+  no_duplicate_rows: true

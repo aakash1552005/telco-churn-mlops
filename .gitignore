@@ -47,8 +47,9 @@ htmlcov/
 .env.local
 .env.*.local
 
-# MLflow & DVC tracking
+# MLflow & DVC tracking & run artifacts
 mlruns/
+reports/
 .dvc/cache/
 .dvc/tmp/
 .dvc/storage/

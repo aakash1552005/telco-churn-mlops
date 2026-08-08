@@ -111,6 +111,34 @@ def task_ingest() -> None:
     print(f"Data ingestion completed: {raw_path}")
 
 
+def task_validate() -> None:
+    """Run data validation against raw dataset."""
+    print("--- Running Data Validation ---")
+    from pathlib import Path
+
+    import pandas as pd
+
+    from src.core.config import get_settings
+    from src.data.ingestion import calculate_sha256
+    from src.data.validation import validate_data
+
+    raw_path = Path(get_settings().RAW_DATA_PATH)
+    if not raw_path.exists():
+        print(
+            f"Error: Raw dataset not found at '{raw_path}'. "
+            f"Run 'python tasks.py ingest' first."
+        )
+        sys.exit(1)
+
+    sha256_hash = calculate_sha256(raw_path)
+    df = pd.read_csv(raw_path)
+    validate_data(df, dataset_sha256=sha256_hash)
+    print(
+        f"Data validation PASSED! "
+        f"Report saved to '{get_settings().VALIDATION_REPORT_PATH}'."
+    )
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -118,7 +146,15 @@ def main() -> None:
     )
     parser.add_argument(
         "target",
-        choices=["install", "lint", "format", "test", "clean", "ingest"],
+        choices=[
+            "install",
+            "lint",
+            "format",
+            "test",
+            "clean",
+            "ingest",
+            "validate",
+        ],
         help="Target task to execute",
     )
     args = parser.parse_args()
@@ -130,6 +166,7 @@ def main() -> None:
         "test": task_test,
         "clean": task_clean,
         "ingest": task_ingest,
+        "validate": task_validate,
     }
     tasks[args.target]()
 
