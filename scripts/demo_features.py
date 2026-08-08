@@ -3,7 +3,9 @@
 Demonstrates:
 1. Before/After values for the 11 TotalCharges blank-string rows (" " -> 0.0 float).
 2. Anti-leakage confirmation (scaler parameters fit ONLY on training split).
-3. Pipeline serialization (joblib) and round-trip transformation verification.
+3. Verification that binary flags (SeniorCitizen, is_monthly_contract, has_internet)
+   remain unscaled {0.0, 1.0} binary values via the passthrough branch.
+4. Pipeline serialization (joblib) and round-trip transformation verification.
 """
 
 import pathlib
@@ -65,15 +67,23 @@ def run_demo() -> None:
 
     print(f"X_train Processed Shape: {X_tr.shape}")
     print(f"X_test Processed Shape:  {X_te.shape}")
-    print(f"y_train Churn Distribution: 1={y_tr.sum()}, 0={len(y_tr)-y_tr.sum()}")
-    print(f"y_test Churn Distribution:  1={y_te.sum()}, 0={len(y_te)-y_te.sum()}")
 
     col_transformer = pipeline.named_steps["column_preprocessor"]
-    scaler = col_transformer.named_transformers_["num"]
-    print("\nScaler Mean Vector (Computed ONLY from X_train):")
+    scaler = col_transformer.named_transformers_["num_scale"]
+    print("\nScaler Mean Vector (Computed ONLY for 5 Continuous Features):")
     print(scaler.mean_)
 
-    print("\n=== 3. FEATURE PIPELINE SERIALIZATION & ARTIFACTS ===")
+    print("\n=== 3. UN-SCALED BINARY FLAGS VERIFICATION ({0.0, 1.0} VALUES) ===")
+    binary_cols = ["SeniorCitizen", "is_monthly_contract", "has_internet"]
+    sample_binary = X_tr[binary_cols].head(10)
+    print("SAMPLE TRANSFORMED BINARY FLAG VALUES IN X_train:")
+    print(sample_binary.to_string(index=True))
+
+    for col in binary_cols:
+        unique_vals = sorted(list(X_tr[col].unique()))
+        print(f"Unique values in '{col}': {unique_vals}")
+
+    print("\n=== 4. FEATURE PIPELINE SERIALIZATION & ARTIFACTS ===")
     pipe_path = pathlib.Path(settings.FEATURE_PIPELINE_PATH)
     processed_dir = pathlib.Path(settings.PROCESSED_DATA_DIR)
 

@@ -13,7 +13,7 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Completed | 2026-08-08 | `02b37d1` |
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
-| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `d0c34cf` |
+| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `599179c` |
 | Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
@@ -67,16 +67,16 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 6: DVC & Feature Engineering
 - **Status:** Completed
 - **Date:** 2026-08-08
-- **Commit:** `d0c34cf` (`feat: add feature engineering pipeline`)
+- **Commit:** `599179c` (`refactor: passthrough unscaled binary flags in feature pipeline`)
 - **Verification Evidence:**
-  - Scikit-Learn Pipeline: Created [`src/data/features.py`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/features.py) containing `TotalChargesImputer`, `DerivedFeatureEngineer`, and `ColumnTransformer` with `OneHotEncoder` & `StandardScaler`.
+  - Scikit-Learn Pipeline: Created [`src/data/features.py`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/features.py) containing `TotalChargesImputer`, `DerivedFeatureEngineer`, and `ColumnTransformer` (`cat` One-Hot 41 cols, `num_scale` StandardScaler 5 cols, `passthrough_binary` 3 cols).
   - Scope Note: Documented in module docstring that pipeline operates strictly on already-validated data.
   - Imputation Reasoning: Imputed 11 blank `TotalCharges` rows (`" "`) to `0.0` float, justified by `tenure == 0` for new customers.
   - Anti-Leakage: `train_test_split(..., test_size=0.2, random_state=42, stratify=y)` performed prior to fitting. Scaler fit EXCLUSIVELY on `X_train`.
   - Artifact Serialization: Serialized fitted pipeline to `models/feature_pipeline.joblib`. Saved `data/processed/train.csv` (5634x50) and `data/processed/test.csv` (1409x50).
   - DVC Tracking: Executed real `dvc add data/processed/` CLI. Updated `data/processed.dvc` and `data/.gitignore`.
   - `py -3.12 tasks.py lint`: Bare `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 12 source files.
-  - `py -3.12 tasks.py test`: All 27 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, `test_validation.py`, and `test_features.py` passed 100% clean in 19.58s.
+  - `py -3.12 tasks.py test`: All 28 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, `test_validation.py`, and `test_features.py` passed 100% clean in 13.65s.
   - `py -3.12 tasks.py features` & `scripts/demo_features.py`: Verified 11 before/after `TotalCharges` rows (`" "` -> `0.0`), `X_train` scaler mean vector fit, and `joblib` artifact.
 - **ADRs Created:** None for Phase 6.
 - **Architectural Impact:**
