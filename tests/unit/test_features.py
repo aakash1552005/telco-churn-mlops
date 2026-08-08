@@ -8,6 +8,8 @@ import pandas as pd
 import pytest
 
 from src.data.features import (
+    BINARY_FLAG_FEATURES,
+    CONTINUOUS_NUMERICAL_FEATURES,
     DerivedFeatureEngineer,
     TotalChargesImputer,
     build_feature_pipeline,
@@ -83,9 +85,23 @@ def test_derived_feature_engineer(raw_sample_df: pd.DataFrame) -> None:
     assert df_out.loc[0, "has_internet"] == 1
 
 
+def test_binary_flags_passthrough_unscaled(
+    raw_sample_df: pd.DataFrame,
+) -> None:
+    """Test binary flags (SeniorCitizen, etc.) remain 0/1 unscaled."""
+    df_large = pd.concat([raw_sample_df] * 10, ignore_index=True)
+    X_tr, X_te, y_tr, y_te, pipeline = process_and_save_features(
+        df_large, test_size=0.3, random_state=42
+    )
+
+    # Assert binary flag columns preserve exact 0/1 integer/float values
+    for flag_col in BINARY_FLAG_FEATURES:
+        unique_vals = set(X_tr[flag_col].unique())
+        assert unique_vals.issubset({0.0, 1.0, 0, 1})
+
+
 def test_no_data_leakage(raw_sample_df: pd.DataFrame) -> None:
     """Test scaler mean/std parameters are computed strictly from X_train."""
-    # Duplicate rows to allow train_test_split
     df_large = pd.concat([raw_sample_df] * 10, ignore_index=True)
 
     X_tr_proc, X_te_proc, y_tr, y_te, pipeline = process_and_save_features(
@@ -95,11 +111,11 @@ def test_no_data_leakage(raw_sample_df: pd.DataFrame) -> None:
     )
 
     col_transformer = pipeline.named_steps["column_preprocessor"]
-    scaler = col_transformer.named_transformers_["num"]
+    scaler = col_transformer.named_transformers_["num_scale"]
 
-    # Verify scaler mean was computed during fit(X_train)
+    # Verify scaler mean was computed during fit(X_train) for 5 continuous features
     assert hasattr(scaler, "mean_")
-    assert len(scaler.mean_) > 0
+    assert len(scaler.mean_) == len(CONTINUOUS_NUMERICAL_FEATURES)
 
 
 def test_feature_pipeline_joblib_roundtrip(

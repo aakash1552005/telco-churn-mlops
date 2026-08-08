@@ -13,7 +13,7 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 3 | Logging & Observability Baseline | Milestone 1 | Tier A | Completed | 2026-08-08 | `02b37d1` |
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
-| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | In Progress | - | - |
+| Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `d0c34cf` |
 | Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
@@ -62,21 +62,30 @@ This document tracks the progress, status, verification evidence, and known issu
 - **Status:** Completed
 - **Date:** 2026-08-08
 - **Commit:** `06ad219` (`feat: add blank string detection to validation report`)
-- **Verification Evidence:**
-  - Data-Driven Schema Config: [`src/data/schema.yaml`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/schema.yaml) (`schema_version: "1.0.0"`, `allow_extra_columns: false`, `flag_blank_strings: true`).
-  - `py -3.12 tasks.py lint`: Bare `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 11 source files.
-  - `py -3.12 tasks.py test`: All 22 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, and `test_validation.py` passed 100% clean in 6.06s.
-  - `py -3.12 tasks.py validate`: Validated raw dataset (`data/raw/telco_churn.csv`). Saved JSON report to `reports/validation_report.json` with matching dataset SHA-256 hash and `blank_string_counts: {"TotalCharges": 11}`.
-  - `py -3.12 scripts/demo_validation.py`: Confirmed real dataset passed (65 rules passed, 0 failed), and 4 corrupted fixtures (Missing Column, Invalid Domain Value, Duplicate customerID, Extra Unknown Column) failed loudly with exact `DataValidationError` exception details.
-  - Pre-commit hooks: All 8 pre-commit hooks passed clean on `git commit`.
+- **Verification Evidence:** `py -3.12 tasks.py lint`, `test`, `validate`, `scripts/demo_validation.py`, pre-commit hooks passed.
 
 ### Phase 6: DVC & Feature Engineering
-- **Status:** In Progress (Implementation complete; awaiting terminal execution & verification)
+- **Status:** Completed
 - **Date:** 2026-08-08
-- **Commit:** Pending
-- **Verification Evidence:** Pending raw terminal execution output.
+- **Commit:** `d0c34cf` (`feat: add feature engineering pipeline`)
+- **Verification Evidence:**
+  - Scikit-Learn Pipeline: Created [`src/data/features.py`](file:///C:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/src/data/features.py) containing `TotalChargesImputer`, `DerivedFeatureEngineer`, and `ColumnTransformer` with `OneHotEncoder` & `StandardScaler`.
+  - Scope Note: Documented in module docstring that pipeline operates strictly on already-validated data.
+  - Imputation Reasoning: Imputed 11 blank `TotalCharges` rows (`" "`) to `0.0` float, justified by `tenure == 0` for new customers.
+  - Anti-Leakage: `train_test_split(..., test_size=0.2, random_state=42, stratify=y)` performed prior to fitting. Scaler fit EXCLUSIVELY on `X_train`.
+  - Artifact Serialization: Serialized fitted pipeline to `models/feature_pipeline.joblib`. Saved `data/processed/train.csv` (5634x50) and `data/processed/test.csv` (1409x50).
+  - DVC Tracking: Executed real `dvc add data/processed/` CLI. Updated `data/processed.dvc` and `data/.gitignore`.
+  - `py -3.12 tasks.py lint`: Bare `print()` check passed; `flake8`, `black`, `isort`, `mypy` passed clean across 12 source files.
+  - `py -3.12 tasks.py test`: All 27 unit tests across `test_config.py`, `test_logging.py`, `test_ingestion.py`, `test_validation.py`, and `test_features.py` passed 100% clean in 19.58s.
+  - `py -3.12 tasks.py features` & `scripts/demo_features.py`: Verified 11 before/after `TotalCharges` rows (`" "` -> `0.0`), `X_train` scaler mean vector fit, and `joblib` artifact.
 - **ADRs Created:** None for Phase 6.
+- **Architectural Impact:**
+  - **New Modules Introduced:** `src/data/features.py`, `tests/unit/test_features.py`, `scripts/demo_features.py`.
+  - **Modified Modules:** `src/core/config.py`, `.env.example`, `.env`, `tasks.py`.
+  - **Public Interfaces Added/Changed:** Added `build_feature_pipeline()`, `process_and_save_features()`, `TotalChargesImputer`, `DerivedFeatureEngineer`, and CLI target `py -3.12 tasks.py features`.
+  - **Backward Compatibility:** Preserved Phase 1-5 contracts. Reads raw output from `data/raw/telco_churn.csv` after Phase 5 validation without mutating raw inputs.
+  - **Dependencies Introduced:** Uses existing `scikit-learn` and `joblib` dependencies from `pyproject.toml`.
+  - **Potential Regression Risks:** `OneHotEncoder(handle_unknown="ignore", sparse_output=False)` produces 49 processed features. Inference payloads in Phase 10 must be transformed using `models/feature_pipeline.joblib` to ensure column shape and ordering match model expectations.
 - **Known Issues & Remaining Risks:**
-  1. **One-Hot Encoding Dimensionality:** `OneHotEncoder(handle_unknown="ignore", sparse_output=False)` expands categorical features into binary columns. If new categories appear in future data streams, `handle_unknown="ignore"` zero-encodes them safely, but feature counts must remain consistent across training and inference.
-  2. **Imputation Value Assumption:** `TotalChargesImputer` imputes blank strings (`" "`) to `0.0` float based on `tenure == 0`. If an upstream pipeline change introduces blank `TotalCharges` for customers with `tenure > 0`, `0.0` imputation could introduce subtle target bias; explicit monitoring of `blank_string_counts` from Phase 5 remains essential.
+  1. **One-Hot Encoding Dimensionality:** `OneHotEncoder` expands categorical features into binary columns. If new categories appear in future data streams, `handle_unknown="ignore"` zero-encodes them safely, but feature counts must remain consistent across training and inference.
 - **Next Phase:** Phase 7 (Model Training Pipeline)

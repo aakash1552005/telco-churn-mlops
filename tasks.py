@@ -160,8 +160,12 @@ def task_features() -> None:
     df_raw = pd.read_csv(raw_path)
     X_tr, X_te, y_tr, y_te, pipe = process_and_save_features(df_raw)
     print("Feature engineering pipeline completed successfully.")
-    print(f"Processed train set shape: {X_tr.shape}")
-    print(f"Processed test set shape: {X_te.shape}")
+    print(f"Processed feature matrix shape (X_train): {X_tr.shape} (49 features)")
+    print(f"Processed feature matrix shape (X_test):  {X_te.shape} (49 features)")
+    print(
+        "Saved CSV datasets on disk (train.csv / test.csv): "
+        "50 columns (49 features + 1 target 'Churn')"
+    )
     print(f"Serialized pipeline: '{get_settings().FEATURE_PIPELINE_PATH}'")
     print(f"Processed datasets directory: '{get_settings().PROCESSED_DATA_DIR}'")
 

@@ -6,7 +6,8 @@ It is NOT a general-purpose validator substitute.
 
 This module constructs a deterministic, scikit-learn compatible feature engineering
 pipeline that performs TotalCharges numeric conversion, blank string imputation,
-derived feature engineering, categorical one-hot encoding, and numerical scaling.
+derived feature engineering, categorical one-hot encoding, numerical scaling,
+and binary flag passthrough.
 """
 
 import subprocess
@@ -27,7 +28,7 @@ from src.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Define categorical and numerical feature groups
+# Categorical features for One-Hot Encoding
 CATEGORICAL_FEATURES: List[str] = [
     "gender",
     "Partner",
@@ -46,11 +47,20 @@ CATEGORICAL_FEATURES: List[str] = [
     "PaymentMethod",
 ]
 
-NUMERICAL_FEATURES: List[str] = [
-    "SeniorCitizen",
+# Continuous numerical features to be standardized via StandardScaler
+CONTINUOUS_NUMERICAL_FEATURES: List[str] = [
     "tenure",
     "MonthlyCharges",
     "TotalCharges",
+    "charge_ratio",
+    "tenure_years",
+]
+
+# Binary 0/1 indicator flags passed through unscaled (preserving 0/1 binary semantics)
+BINARY_FLAG_FEATURES: List[str] = [
+    "SeniorCitizen",
+    "is_monthly_contract",
+    "has_internet",
 ]
 
 TARGET_COLUMN: str = "Churn"
@@ -105,13 +115,13 @@ class DerivedFeatureEngineer(BaseEstimator, TransformerMixin):
         if "tenure" in X_out.columns:
             X_out["tenure_years"] = X_out["tenure"] / 12.0
 
-        # Derived feature 3: Month-to-month contract flag
+        # Derived feature 3: Month-to-month contract flag (Binary 0/1)
         if "Contract" in X_out.columns:
             X_out["is_monthly_contract"] = (
                 X_out["Contract"] == "Month-to-month"
             ).astype(int)
 
-        # Derived feature 4: Internet service presence flag
+        # Derived feature 4: Internet service presence flag (Binary 0/1)
         if "InternetService" in X_out.columns:
             X_out["has_internet"] = (X_out["InternetService"] != "No").astype(int)
 
@@ -121,17 +131,14 @@ class DerivedFeatureEngineer(BaseEstimator, TransformerMixin):
 def build_feature_pipeline() -> Pipeline:
     """Construct complete scikit-learn feature engineering Pipeline.
 
-    Returns:
-        Unfitted scikit-learn Pipeline object combining imputation, feature
-        derivation, categorical encoding, and numerical scaling.
-    """
-    derived_num_cols = NUMERICAL_FEATURES + [
-        "charge_ratio",
-        "tenure_years",
-        "is_monthly_contract",
-        "has_internet",
-    ]
+    Branch Breakdown:
+    - 'cat': OneHotEncoder for multi-class categoricals (41 columns).
+    - 'num_scale': StandardScaler for continuous numerical features (5 columns).
+    - 'passthrough_binary': Passthrough for binary 0/1 indicator flags (3 columns).
 
+    Returns:
+        Unfitted scikit-learn Pipeline object.
+    """
     preprocessor = ColumnTransformer(
         transformers=[
             (
@@ -139,7 +146,8 @@ def build_feature_pipeline() -> Pipeline:
                 OneHotEncoder(handle_unknown="ignore", sparse_output=False),
                 CATEGORICAL_FEATURES,
             ),
-            ("num", StandardScaler(), derived_num_cols),
+            ("num_scale", StandardScaler(), CONTINUOUS_NUMERICAL_FEATURES),
+            ("passthrough_binary", "passthrough", BINARY_FLAG_FEATURES),
         ]
     )
 
@@ -224,12 +232,15 @@ def process_and_save_features(
     logger.info("Transforming X_test using fitted pipeline...")
     X_test_transformed = pipeline.transform(X_test)
 
-    # Retrieve feature names from ColumnTransformer step
+    # Retrieve feature names from ColumnTransformer steps
     col_transformer: ColumnTransformer = pipeline.named_steps["column_preprocessor"]
     cat_encoder: OneHotEncoder = col_transformer.named_transformers_["cat"]
     cat_feature_names = cat_encoder.get_feature_names_out(CATEGORICAL_FEATURES)
-    num_feature_names = col_transformer.transformers[1][2]
-    all_feature_names = list(cat_feature_names) + list(num_feature_names)
+    num_scale_names = col_transformer.transformers[1][2]
+    binary_flag_names = col_transformer.transformers[2][2]
+    all_feature_names = (
+        list(cat_feature_names) + list(num_scale_names) + list(binary_flag_names)
+    )
 
     X_train_proc = pd.DataFrame(
         X_train_transformed, columns=all_feature_names, index=X_train.index
