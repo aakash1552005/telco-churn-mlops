@@ -31,8 +31,30 @@ def task_install() -> None:
     run_cmd(["pre-commit", "install"])
 
 
+def check_no_print() -> None:
+    """Ensure no bare print() statements exist in src/."""
+    print("--- Checking for bare print() statements in src/ ---")
+    stray_prints = []
+    for py_file in (PROJECT_ROOT / "src").rglob("*.py"):
+        lines = py_file.read_text(encoding="utf-8").splitlines()
+        for idx, line in enumerate(lines, 1):
+            stripped = line.strip()
+            if stripped.startswith("print(") or " print(" in line:
+                if not stripped.startswith("#"):
+                    stray_prints.append(
+                        f"{py_file.relative_to(PROJECT_ROOT)}:{idx}: {line}"
+                    )
+    if stray_prints:
+        print("Error: Bare print() statements found in src/:")
+        for err in stray_prints:
+            print(f"  {err}")
+        sys.exit(1)
+    print("No bare print() statements found in src/.")
+
+
 def task_lint() -> None:
     """Run code style, formatting, and type checks."""
+    check_no_print()
     print("--- Running flake8 ---")
     run_cmd([sys.executable, "-m", "flake8", "src", "tests"])
     print("--- Running black check ---")
