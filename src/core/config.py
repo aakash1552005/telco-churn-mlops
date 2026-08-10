@@ -71,6 +71,36 @@ class Settings(BaseSettings):
         description="Random seed for deterministic data splitting",
     )
 
+    # Model Training Settings (Master Contract Section 7)
+    FEATURE_SCHEMA_PATH: str = Field(
+        default="models/feature_schema.json",
+        description="Destination path for ordered feature schema JSON artifact",
+    )
+    MODEL_OUTPUT_PATH: str = Field(
+        default="models/best_model.joblib",
+        description="Destination path for serialized winning model artifact",
+    )
+    TRAINING_METRICS_PATH: str = Field(
+        default="reports/training_metrics.json",
+        description="Destination path for model training evaluation metrics report",
+    )
+    CV_RESULTS_PATH: str = Field(
+        default="reports/cv_results.csv",
+        description="Destination path for cross-validation search results CSV",
+    )
+    TRAINING_METADATA_PATH: str = Field(
+        default="models/training_metadata.json",
+        description="Destination path for training provenance metadata JSON artifact",
+    )
+    CV_FOLDS: int = Field(
+        default=5,
+        description="Number of folds for StratifiedKFold cross-validation",
+    )
+    MODEL_SEARCH_ITERATIONS: int = Field(
+        default=20,
+        description="Number of parameter settings sampled in RandomizedSearchCV",
+    )
+
     # API & Security Settings (Section 11)
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000

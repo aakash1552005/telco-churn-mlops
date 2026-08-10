@@ -1,0 +1,16 @@
+{
+  "algorithm": "LogisticRegression",
+  "random_seed": 42,
+  "cv_folds": 5,
+  "best_hyperparameters": {
+    "solver": "lbfgs",
+    "C": 0.001
+  },
+  "best_cv_score": 1.0,
+  "training_timestamp": "2026-08-10T16:51:09.762079+00:00",
+  "git_commit_hash": "1ec300f77e49e49abde73f3a0bb2658aa38b8899",
+  "feature_count": 34,
+  "dataset_sha256": "16320c9c1ec72448db59aa0a26a0b95401046bef5d02fd3aeb906448e3055e91",
+  "feature_pipeline_sha256": "0de8f93a598ceecfb4df51661ea096f8c7dd639c887747fdff7c5e0afb51ef60",
+  "schema_version": "1.0.0"
+}

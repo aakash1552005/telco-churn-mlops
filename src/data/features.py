@@ -10,6 +10,7 @@ derived feature engineering, categorical one-hot encoding, numerical scaling,
 and binary flag passthrough.
 """
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -179,6 +180,7 @@ def process_and_save_features(
     raw_df: pd.DataFrame,
     processed_dir: Optional[Path] = None,
     pipeline_path: Optional[Path] = None,
+    schema_output_path: Optional[Path] = None,
     test_size: Optional[float] = None,
     random_state: Optional[int] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, Pipeline]:
@@ -188,6 +190,7 @@ def process_and_save_features(
         raw_df: Raw input DataFrame.
         processed_dir: Directory to store processed CSVs.
         pipeline_path: File path to serialize feature pipeline.
+        schema_output_path: File path to serialize ordered feature schema JSON.
         test_size: Test split ratio.
         random_state: Random state seed.
 
@@ -197,6 +200,7 @@ def process_and_save_features(
     settings = get_settings()
     out_dir = processed_dir or Path(settings.PROCESSED_DATA_DIR)
     pipe_path = pipeline_path or Path(settings.FEATURE_PIPELINE_PATH)
+    sch_path = schema_output_path or Path(settings.FEATURE_SCHEMA_PATH)
     t_size = test_size or settings.TEST_SIZE
     r_state = random_state or settings.RANDOM_STATE
 
@@ -270,6 +274,17 @@ def process_and_save_features(
     pipe_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, pipe_path)
     logger.info(f"Serialized fitted feature pipeline artifact to: {pipe_path}")
+
+    # Persist expected ordered feature schema JSON
+    sch_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_payload = {
+        "features": list(all_feature_names),
+        "target": TARGET_COLUMN,
+        "feature_count": len(all_feature_names),
+    }
+    with open(sch_path, "w", encoding="utf-8") as f:
+        json.dump(schema_payload, f, indent=2)
+    logger.info(f"Persisted ordered feature schema artifact to: {sch_path}")
 
     # Update DVC tracking on data/processed
     run_dvc_add_processed(out_dir)
