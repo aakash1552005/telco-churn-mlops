@@ -1,5 +1,6 @@
 """Unit tests for feature engineering module."""
 
+import json
 from pathlib import Path
 
 import joblib
@@ -142,15 +143,17 @@ def test_feature_pipeline_joblib_roundtrip(
 def test_process_and_save_features_end_to_end(
     raw_sample_df: pd.DataFrame, tmp_path: Path
 ) -> None:
-    """End-to-end test verifying processed CSVs and serialized joblib pipeline."""
+    """End-to-end test for CSVs, joblib pipeline, and schema JSON."""
     df_large = pd.concat([raw_sample_df] * 10, ignore_index=True)
     out_dir = tmp_path / "processed"
     pipe_path = tmp_path / "feature_pipeline.joblib"
+    sch_path = tmp_path / "feature_schema.json"
 
     X_tr, X_te, y_tr, y_te, pipeline = process_and_save_features(
         df_large,
         processed_dir=out_dir,
         pipeline_path=pipe_path,
+        schema_output_path=sch_path,
         test_size=0.2,
         random_state=42,
     )
@@ -158,6 +161,7 @@ def test_process_and_save_features_end_to_end(
     assert (out_dir / "train.csv").exists()
     assert (out_dir / "test.csv").exists()
     assert pipe_path.exists()
+    assert sch_path.exists()
 
     train_df = pd.read_csv(out_dir / "train.csv")
     test_df = pd.read_csv(out_dir / "test.csv")
@@ -165,3 +169,12 @@ def test_process_and_save_features_end_to_end(
     assert "Churn" in train_df.columns
     assert "Churn" in test_df.columns
     assert len(train_df) + len(test_df) == len(df_large)
+
+    with open(sch_path, "r", encoding="utf-8") as f:
+        schema_data = json.load(f)
+
+    assert "features" in schema_data
+    assert "target" in schema_data
+    assert schema_data["target"] == "Churn"
+    assert schema_data["feature_count"] == len(X_tr.columns)
+    assert schema_data["features"] == list(X_tr.columns)

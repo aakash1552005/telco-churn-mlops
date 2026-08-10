@@ -170,6 +170,22 @@ def task_features() -> None:
     print(f"Processed datasets directory: '{get_settings().PROCESSED_DATA_DIR}'")
 
 
+def task_train() -> None:
+    """Run model training and hyperparameter search pipeline."""
+    print("--- Running Model Training Pipeline ---")
+    from src.core.config import get_settings
+    from src.training.train import train_candidate_models
+
+    winning_model, metrics, metadata = train_candidate_models()
+    print("Model training pipeline completed successfully.")
+    print(f"Winning Algorithm: {metadata['algorithm']}")
+    print(f"Best CV ROC-AUC Score: {metadata['best_cv_score']}")
+    print(f"Serialized Winning Model: '{get_settings().MODEL_OUTPUT_PATH}'")
+    print(f"Training Metrics JSON: '{get_settings().TRAINING_METRICS_PATH}'")
+    print(f"Cross-Validation Results CSV: '{get_settings().CV_RESULTS_PATH}'")
+    print(f"Training Metadata JSON: '{get_settings().TRAINING_METADATA_PATH}'")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -186,6 +202,7 @@ def main() -> None:
             "ingest",
             "validate",
             "features",
+            "train",
         ],
         help="Target task to execute",
     )
@@ -200,6 +217,7 @@ def main() -> None:
         "ingest": task_ingest,
         "validate": task_validate,
         "features": task_features,
+        "train": task_train,
     }
     tasks[args.target]()
 

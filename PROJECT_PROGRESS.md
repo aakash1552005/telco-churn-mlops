@@ -14,7 +14,7 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
 | Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `599179c` |
-| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Pending | - | - |
+| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-10 | `feat: train` |
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
 | Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Pending | - | - |
@@ -89,3 +89,22 @@ This document tracks the progress, status, verification evidence, and known issu
 - **Known Issues & Remaining Risks:**
   1. **One-Hot Encoding Dimensionality:** `OneHotEncoder` expands categorical features into binary columns. If new categories appear in future data streams, `handle_unknown="ignore"` zero-encodes them safely, but feature counts must remain consistent across training and inference.
 - **Next Phase:** Phase 7 (Model Training Pipeline)
+
+### Phase 7: Model Training Pipeline
+- **Status:** Completed
+- **Date:** 2026-08-10
+- **Commit:** `feat: add model training with hyperparameter search`
+- **Verification Evidence:**
+  - `models/feature_schema.json` created by Phase 6 additive update and validated dynamically prior to fitting.
+  - Logistic Regression baseline & XGBoost Classifier trained with `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` and `RandomizedSearchCV(scoring='roc_auc', random_state=42)`.
+  - Winning candidate `XGBClassifier` serialized to `models/best_model.joblib`.
+  - Evaluation reports saved: `reports/training_metrics.json` and `reports/cv_results.csv`.
+  - Provenance metadata serialized to `models/training_metadata.json`.
+  - Unit tests in `tests/unit/test_training.py` verify interface (`.predict()`, `.predict_proba()`, `.classes_`), schema error handling, and 100% deterministic reproducibility across random seeds.
+- **ADRs Created:** [`docs/adr/0003-model-training-and-hyperparameter-search-strategy.md`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0003-model-training-and-hyperparameter-search-strategy.md).
+- **Architectural Impact:**
+  - **New Modules Introduced:** `src/training/train.py`, `docs/adr/0003-model-training-and-hyperparameter-search-strategy.md`, `tests/unit/test_training.py`.
+  - **Modified Modules:** `src/core/config.py`, `src/data/features.py`, `src/training/__init__.py`, `tasks.py`, `tests/unit/test_features.py`.
+  - **Public Interfaces Added/Changed:** `train_candidate_models()`, `validate_feature_schema()`, `log_class_balance()`, `py -3.12 tasks.py train`.
+  - **Backward Compatibility:** Preserved Phase 1-6 contracts. Feature ordering and processed datasets remain unchanged.
+- **Next Phase:** Phase 8 (Model Evaluation & Metrics)
