@@ -7,6 +7,12 @@ from src.training.evaluate import (
     plot_confusion_matrix,
     plot_feature_importance,
 )
+from src.training.promotion import (
+    compare_candidate_to_incumbent,
+    load_promotion_policy,
+    log_pipeline_run_to_mlflow,
+    promote_model,
+)
 from src.training.train import (
     log_class_balance,
     roc_auc_binary_scorer,
@@ -24,4 +30,8 @@ __all__ = [
     "generate_evaluation_report",
     "plot_feature_importance",
     "plot_confusion_matrix",
+    "promote_model",
+    "compare_candidate_to_incumbent",
+    "load_promotion_policy",
+    "log_pipeline_run_to_mlflow",
 ]

@@ -213,6 +213,25 @@ def task_evaluate() -> None:
     print(f"Plots Directory: '{settings.PLOTS_DIR}'")
 
 
+def task_promote() -> None:
+    """Orchestrate MLflow model registry integration and promotion policy."""
+    print("--- Running Model Promotion Pipeline ---")
+    from src.core.config import get_settings
+    from src.training.promotion import promote_model
+
+    results = promote_model()
+    settings = get_settings()
+    print("Model promotion pipeline completed successfully.")
+    print(f"Registered Model Name: {results['model_name']}")
+    print(f"Registered Model Version: {results['model_version']}")
+    print(f"Assigned Lifecycle Stage: {results['stage']}")
+    status_str = "PROMOTED" if results["is_promoted"] else "REJECTED"
+    print(f"Promotion Status: {status_str}")
+    print(f"Promotion Reason: {results['reason']}")
+    print(f"MLflow Run ID: {results['run_id']}")
+    print(f"MLflow Tracking URI: '{settings.MLFLOW_TRACKING_URI}'")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -231,6 +250,7 @@ def main() -> None:
             "features",
             "train",
             "evaluate",
+            "promote",
         ],
         help="Target task to execute",
     )
@@ -247,6 +267,7 @@ def main() -> None:
         "features": task_features,
         "train": task_train,
         "evaluate": task_evaluate,
+        "promote": task_promote,
     }
     tasks[args.target]()
 

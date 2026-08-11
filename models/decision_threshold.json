@@ -1,12 +1,12 @@
 {
-  "optimal_threshold": 0.3254,
-  "optimal_f1": 0.6416,
-  "optimal_precision": 0.5598,
-  "optimal_recall": 0.7513,
+  "optimal_threshold": 0.572,
+  "optimal_f1": 0.7391,
+  "optimal_precision": 0.85,
+  "optimal_recall": 0.6538,
   "default_metrics_at_0_5": {
-    "roc_auc": 0.8469,
-    "f1": 0.5898,
-    "precision": 0.6701,
-    "recall": 0.5267
+    "roc_auc": 0.7804,
+    "f1": 0.6923,
+    "precision": 0.6923,
+    "recall": 0.6923
   }
 }

@@ -49,6 +49,11 @@ htmlcov/
 
 # MLflow & DVC tracking & run artifacts
 mlruns/
+mlflow.db
+*.db
+check_lr_run.py
+
+
 reports/
 .dvc/cache/
 .dvc/tmp/
