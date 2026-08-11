@@ -87,12 +87,17 @@ def test_derived_feature_engineer(raw_sample_df: pd.DataFrame) -> None:
 
 
 def test_binary_flags_passthrough_unscaled(
-    raw_sample_df: pd.DataFrame,
+    raw_sample_df: pd.DataFrame, tmp_path: Path
 ) -> None:
     """Test binary flags (SeniorCitizen, etc.) remain 0/1 unscaled."""
     df_large = pd.concat([raw_sample_df] * 10, ignore_index=True)
     X_tr, X_te, y_tr, y_te, pipeline = process_and_save_features(
-        df_large, test_size=0.3, random_state=42
+        df_large,
+        processed_dir=tmp_path / "proc",
+        pipeline_path=tmp_path / "pipe.joblib",
+        schema_output_path=tmp_path / "schema.json",
+        test_size=0.3,
+        random_state=42,
     )
 
     # Assert binary flag columns preserve exact 0/1 integer/float values
@@ -101,12 +106,15 @@ def test_binary_flags_passthrough_unscaled(
         assert unique_vals.issubset({0.0, 1.0, 0, 1})
 
 
-def test_no_data_leakage(raw_sample_df: pd.DataFrame) -> None:
+def test_no_data_leakage(raw_sample_df: pd.DataFrame, tmp_path: Path) -> None:
     """Test scaler mean/std parameters are computed strictly from X_train."""
     df_large = pd.concat([raw_sample_df] * 10, ignore_index=True)
 
     X_tr_proc, X_te_proc, y_tr, y_te, pipeline = process_and_save_features(
         df_large,
+        processed_dir=tmp_path / "proc",
+        pipeline_path=tmp_path / "pipe.joblib",
+        schema_output_path=tmp_path / "schema.json",
         test_size=0.3,
         random_state=42,
     )
@@ -130,6 +138,7 @@ def test_feature_pipeline_joblib_roundtrip(
     # Save to joblib
     model_file = tmp_path / "feature_pipeline.joblib"
     joblib.dump(pipeline, model_file)
+
     assert model_file.exists()
 
     # Reload from joblib

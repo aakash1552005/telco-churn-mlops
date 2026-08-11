@@ -35,7 +35,15 @@ We intentionally decouple the optimization metric used during hyperparameter sea
 - **ROC-AUC (Hyperparameter Search Criterion):** ROC-AUC measures a model's threshold-independent ability to rank positive (churn) instances higher than negative (non-churn) instances across all possible probability thresholds. It provides a smooth, continuous, rank-order optimization signal that is resilient to class imbalance and avoids overfitting to an arbitrary decision threshold during hyperparameter search.
 - **F1 / Precision / Recall (Production Promotion Gate - Master Contract Section 9):** Evaluates operational performance at a specific decision boundary (e.g., probability threshold = 0.5) against business constraints (e.g., maximum allowable precision drop $\le 2\%$, F1 improvement $\ge 0.01$, and non-decreasing recall).
 
+**Empirical Training Outcome & Divergence Analysis (Phase 7 Run):**
+- **Search Selection Winner:** `XGBClassifier` won candidate selection with **Best CV ROC-AUC = 0.8497** compared to `LogisticRegression` (**0.8460**).
+- **Held-Out Test Set Metrics (1,409 rows):**
+  - **`XGBClassifier`:** Test ROC-AUC = **0.8469**, Precision = **0.6701**, Recall = **0.5267**, F1 = **0.5898**
+  - **`LogisticRegression`:** Test ROC-AUC = **0.8422**, Precision = **0.6552**, Recall = **0.5588**, F1 = **0.6032**
+- **Empirical Insight:** `XGBClassifier` provides superior overall ranking power across probability thresholds (ROC-AUC 0.8497 vs 0.8460). However, at the default `0.5` decision boundary, `LogisticRegression` produces a higher test F1 score (0.6032 vs 0.5898) due to higher recall (0.5588 vs 0.5267). This empirical divergence validates our two-tier strategy: `RandomizedSearchCV` optimizes global ranking capacity (ROC-AUC) to select the best probability estimator, while Phase 9's production promotion gate evaluates threshold-specific operational metrics (F1/Precision/Recall) before deployment.
+
 **Key Takeaway:** Search signal (finding the best overall probability estimator) and deployment gate (validating operational business threshold safety) serve fundamentally different purposes in the model lifecycle.
+
 
 ---
 
