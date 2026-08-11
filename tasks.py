@@ -186,6 +186,33 @@ def task_train() -> None:
     print(f"Training Metadata JSON: '{get_settings().TRAINING_METADATA_PATH}'")
 
 
+def task_evaluate() -> None:
+    """Run model evaluation, threshold optimization, and reporting pipeline."""
+    print("--- Running Model Evaluation Pipeline ---")
+    from src.core.config import get_settings
+    from src.training.evaluate import generate_evaluation_report
+
+    results = generate_evaluation_report()
+    settings = get_settings()
+    print("Model evaluation pipeline completed successfully.")
+    print(f"Evaluated Model Algorithm: {results['model_algorithm']}")
+    print(f"Test Samples Evaluated: {results['test_samples']}")
+    print(f"Default 0.5 ROC-AUC: {results['metrics_at_threshold_0_5']['roc_auc']}")
+    print(f"Default 0.5 F1: {results['metrics_at_threshold_0_5']['f1']}")
+    opt_th = results["optimal_threshold_metrics"]["optimal_threshold"]
+    print(f"Optimal Threshold: {opt_th}")
+
+    print(f"Optimal Threshold F1: {results['optimal_threshold_metrics']['f1']}")
+    print(f"Brier Score: {results['brier_score']}")
+    print(f"Evaluation Metrics JSON: '{settings.EVALUATION_METRICS_PATH}'")
+    print(f"Optimal Decision Threshold JSON: '{settings.DECISION_THRESHOLD_PATH}'")
+    print(f"Classification Report JSON: '{settings.CLASSIFICATION_REPORT_PATH}'")
+    print(f"Calibration Metrics JSON: '{settings.CALIBRATION_METRICS_PATH}'")
+    print(f"Feature Importances CSV: '{settings.FEATURE_IMPORTANCE_PATH}'")
+    print(f"Error Analysis CSV: '{settings.ERROR_ANALYSIS_PATH}'")
+    print(f"Plots Directory: '{settings.PLOTS_DIR}'")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -203,6 +230,7 @@ def main() -> None:
             "validate",
             "features",
             "train",
+            "evaluate",
         ],
         help="Target task to execute",
     )
@@ -218,6 +246,7 @@ def main() -> None:
         "validate": task_validate,
         "features": task_features,
         "train": task_train,
+        "evaluate": task_evaluate,
     }
     tasks[args.target]()
 

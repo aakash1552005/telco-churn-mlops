@@ -101,6 +101,38 @@ class Settings(BaseSettings):
         description="Number of parameter settings sampled in RandomizedSearchCV",
     )
 
+    # Phase 8 — Model Evaluation Settings
+    EVALUATION_METRICS_PATH: str = Field(
+        default="reports/evaluation_metrics.json",
+        description=(
+            "Destination path for consolidated model evaluation metrics report JSON"
+        ),
+    )
+    DECISION_THRESHOLD_PATH: str = Field(
+        default="models/decision_threshold.json",
+        description="Destination path for optimal decision threshold JSON artifact",
+    )
+    CLASSIFICATION_REPORT_PATH: str = Field(
+        default="reports/classification_report.json",
+        description="Destination path for detailed classification report JSON artifact",
+    )
+    CALIBRATION_METRICS_PATH: str = Field(
+        default="reports/calibration_metrics.json",
+        description="Destination path for model calibration metrics JSON artifact",
+    )
+    FEATURE_IMPORTANCE_PATH: str = Field(
+        default="reports/feature_importance.csv",
+        description="Destination path for feature importances CSV artifact",
+    )
+    ERROR_ANALYSIS_PATH: str = Field(
+        default="reports/error_analysis.csv",
+        description="Destination path for error analysis CSV artifact",
+    )
+    PLOTS_DIR: str = Field(
+        default="reports/plots",
+        description="Destination directory for model evaluation visualization plots",
+    )
+
     # API & Security Settings (Section 11)
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
