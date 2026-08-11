@@ -1,0 +1,5 @@
+{
+  "min_f1_improvement": 0.01,
+  "max_precision_drop": 0.02,
+  "max_recall_drop": 0.0
+}

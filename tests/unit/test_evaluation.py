@@ -148,7 +148,7 @@ def synthetic_eval_dataset(tmp_path: Path) -> Dict[str, Any]:
 
 
 def test_generate_evaluation_report_artifacts(
-    synthetic_eval_dataset: Dict[str, Any]
+    synthetic_eval_dataset: Dict[str, Any],
 ) -> None:
     """Test generate_evaluation_report creates all plots, JSONs, and CSVs."""
     ds = synthetic_eval_dataset

@@ -15,7 +15,8 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
 | Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `599179c` |
 | Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-11 | `e02ed01` |
-| Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Completed | 2026-08-11 | `feat: eval` |
+| Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Completed | 2026-08-11 | `aff9971` |
+
 
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
 | Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Pending | - | - |
@@ -116,7 +117,8 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 8: Model Evaluation & Metrics
 - **Status:** Completed
 - **Date:** 2026-08-11
-- **Commit:** `feat: add model evaluation and reporting`
+- **Commit:** `aff9971` (`feat: add model evaluation and reporting`)
+
 - **Verification Evidence:**
   - Evaluated `models/best_model.joblib` (`XGBClassifier`) against `data/processed/test.csv` (1,409 test samples).
   - Integrity check verified `1409 / 1409 / 1409` matching test rows, prediction count, and probability count.
