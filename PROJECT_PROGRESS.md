@@ -14,7 +14,7 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
 | Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `599179c` |
-| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-10 | `feat: train` |
+| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-10 | `6c14fea` |
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
 | Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Pending | - | - |
@@ -93,14 +93,16 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 7: Model Training Pipeline
 - **Status:** Completed
 - **Date:** 2026-08-10
-- **Commit:** `feat: add model training with hyperparameter search`
+- **Commit:** `6c14fea` (`feat: add model training with hyperparameter search`)
 - **Verification Evidence:**
-  - `models/feature_schema.json` created by Phase 6 additive update and validated dynamically prior to fitting.
-  - Logistic Regression baseline & XGBoost Classifier trained with `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` and `RandomizedSearchCV(scoring='roc_auc', random_state=42)`.
-  - Winning candidate `XGBClassifier` serialized to `models/best_model.joblib`.
+  - `models/feature_schema.json` containing 49 features validated dynamically prior to model fitting.
+  - Logistic Regression baseline & XGBoost Classifier trained with `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` on full dataset (`train=(5634, 50)`, `test=(1409, 50)`).
+  - Winning candidate `XGBClassifier` selected with Best CV ROC-AUC = `0.8497` and serialized to `models/best_model.joblib`.
+  - Held-out test set evaluation (1,409 rows): `XGBClassifier` (ROC-AUC=0.8469, Precision=0.6701, Recall=0.5267, F1=0.5898), `LogisticRegression` (ROC-AUC=0.8422, Precision=0.6552, Recall=0.5588, F1=0.6032).
   - Evaluation reports saved: `reports/training_metrics.json` and `reports/cv_results.csv`.
   - Provenance metadata serialized to `models/training_metadata.json`.
   - Unit tests in `tests/unit/test_training.py` verify interface (`.predict()`, `.predict_proba()`, `.classes_`), schema error handling, and 100% deterministic reproducibility across random seeds.
+
 - **ADRs Created:** [`docs/adr/0003-model-training-and-hyperparameter-search-strategy.md`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0003-model-training-and-hyperparameter-search-strategy.md).
 - **Architectural Impact:**
   - **New Modules Introduced:** `src/training/train.py`, `docs/adr/0003-model-training-and-hyperparameter-search-strategy.md`, `tests/unit/test_training.py`.

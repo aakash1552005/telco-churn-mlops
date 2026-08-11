@@ -59,26 +59,28 @@ def get_git_commit_hash() -> str:
 
 
 def validate_feature_schema(
-    df: pd.DataFrame, schema_path: Optional[Path] = None
+    df: pd.DataFrame,
+    schema_path: Optional[Path] = None,
+    log_success: bool = True,
 ) -> List[str]:
-    """Validate DataFrame actual feature columns against persisted feature schema.
+    """Compare dataset columns against persisted models/feature_schema.json.
 
     Args:
-        df: Input DataFrame (train or test).
-        schema_path: Optional path to models/feature_schema.json artifact.
+        df: Input DataFrame to validate.
+        schema_path: Optional path to feature_schema.json artifact.
+        log_success: Whether to log success message.
 
     Returns:
         List of expected feature column names in exact order.
 
     Raises:
-        ValueError: If feature count, feature names, or column order mismatch.
-        FileNotFoundError: If feature_schema.json artifact is missing.
+        FileNotFoundError: If feature_schema.json does not exist.
+        ValueError: If feature count, names, or ordering mismatch schema.
     """
-    settings = get_settings()
-    path = schema_path or Path(settings.FEATURE_SCHEMA_PATH)
+    path = schema_path or Path(get_settings().FEATURE_SCHEMA_PATH)
     if not path.exists():
         err_msg = (
-            f"Feature schema artifact not found at '{path}'. "
+            f"Feature schema artifact '{path}' not found. "
             f"Run Phase 6 feature engineering pipeline first."
         )
         logger.error(err_msg)
@@ -93,8 +95,8 @@ def validate_feature_schema(
     # Check 1: Feature Count Mismatch
     if len(actual_features) != len(expected_features):
         err_msg = (
-            f"Feature schema count mismatch: expected {len(expected_features)} "
-            f"features, observed {len(actual_features)} features."
+            f"Feature schema count mismatch: expected {len(expected_features)}, "
+            f"observed {len(actual_features)}."
         )
         logger.error(err_msg)
         raise ValueError(err_msg)
@@ -117,10 +119,11 @@ def validate_feature_schema(
         logger.error(err_msg)
         raise ValueError(err_msg)
 
-    logger.info(
-        f"Feature schema alignment validated successfully "
-        f"({len(expected_features)} features)."
-    )
+    if log_success:
+        logger.info(
+            f"Feature schema alignment validated successfully "
+            f"({len(expected_features)} features)."
+        )
     return expected_features
 
 
@@ -219,8 +222,10 @@ def train_candidate_models(
     )
 
     # 2. Compare train.csv Columns Against Persisted Feature Schema
-    expected_features = validate_feature_schema(train_df, schema_path=sch_path)
-    validate_feature_schema(test_df, schema_path=sch_path)
+    expected_features = validate_feature_schema(
+        train_df, schema_path=sch_path, log_success=True
+    )
+    validate_feature_schema(test_df, schema_path=sch_path, log_success=False)
 
     X_train = train_df[expected_features]
     y_train = train_df[TARGET_COLUMN]

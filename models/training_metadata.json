@@ -1,16 +1,21 @@
 {
-  "algorithm": "LogisticRegression",
+  "algorithm": "XGBClassifier",
   "random_seed": 42,
   "cv_folds": 5,
   "best_hyperparameters": {
-    "solver": "lbfgs",
-    "C": 0.001
+    "subsample": 1.0,
+    "n_estimators": 200,
+    "min_child_weight": 3,
+    "max_depth": 3,
+    "learning_rate": 0.03,
+    "gamma": 0.0,
+    "colsample_bytree": 0.6
   },
-  "best_cv_score": 1.0,
-  "training_timestamp": "2026-08-10T16:51:09.762079+00:00",
-  "git_commit_hash": "1ec300f77e49e49abde73f3a0bb2658aa38b8899",
-  "feature_count": 34,
+  "best_cv_score": 0.8497,
+  "training_timestamp": "2026-08-11T04:34:52.183485+00:00",
+  "git_commit_hash": "6c14feac50499b741de2fa0af6a668da62063f9f",
+  "feature_count": 49,
   "dataset_sha256": "16320c9c1ec72448db59aa0a26a0b95401046bef5d02fd3aeb906448e3055e91",
-  "feature_pipeline_sha256": "0de8f93a598ceecfb4df51661ea096f8c7dd639c887747fdff7c5e0afb51ef60",
+  "feature_pipeline_sha256": "22a51ed5502844ade1782e5454689209897ad21af92d8ae57b117edef0c88921",
   "schema_version": "1.0.0"
 }
