@@ -27,7 +27,9 @@ dependencies = [
     "prometheus-client>=0.20.0",
     "slowapi>=0.1.9",
     "python-dotenv>=1.0.1",
+    "matplotlib>=3.8.0",
 ]
+
 
 [project.optional-dependencies]
 dev = [

@@ -14,8 +14,9 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 4 | Data Ingestion Pipeline | Milestone 1 | Tier A | Completed | 2026-08-08 | `9f7fde1` |
 | Phase 5 | Data Validation & Schema | Milestone 1 | Tier A | Completed | 2026-08-08 | `06ad219` |
 | Phase 6 | DVC & Feature Engineering | Milestone 1 | Tier A | Completed | 2026-08-08 | `599179c` |
-| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-10 | `6c14fea` |
-| Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Pending | - | - |
+| Phase 7 | Model Training Pipeline | Milestone 1 | Tier A | Completed | 2026-08-11 | `e02ed01` |
+| Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Completed | 2026-08-11 | `feat: eval` |
+
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
 | Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Pending | - | - |
 | Phase 11 | Docker Containerization | Milestone 1 | Tier A | Pending | - | - |
@@ -92,8 +93,9 @@ This document tracks the progress, status, verification evidence, and known issu
 
 ### Phase 7: Model Training Pipeline
 - **Status:** Completed
-- **Date:** 2026-08-10
-- **Commit:** `6c14fea` (`feat: add model training with hyperparameter search`)
+- **Date:** 2026-08-11
+- **Commit:** `e02ed01` (`feat: add model training with hyperparameter search`)
+
 - **Verification Evidence:**
   - `models/feature_schema.json` containing 49 features validated dynamically prior to model fitting.
   - Logistic Regression baseline & XGBoost Classifier trained with `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` on full dataset (`train=(5634, 50)`, `test=(1409, 50)`).
@@ -110,3 +112,23 @@ This document tracks the progress, status, verification evidence, and known issu
   - **Public Interfaces Added/Changed:** `train_candidate_models()`, `validate_feature_schema()`, `log_class_balance()`, `py -3.12 tasks.py train`.
   - **Backward Compatibility:** Preserved Phase 1-6 contracts. Feature ordering and processed datasets remain unchanged.
 - **Next Phase:** Phase 8 (Model Evaluation & Metrics)
+
+### Phase 8: Model Evaluation & Metrics
+- **Status:** Completed
+- **Date:** 2026-08-11
+- **Commit:** `feat: add model evaluation and reporting`
+- **Verification Evidence:**
+  - Evaluated `models/best_model.joblib` (`XGBClassifier`) against `data/processed/test.csv` (1,409 test samples).
+  - Integrity check verified `1409 / 1409 / 1409` matching test rows, prediction count, and probability count.
+  - Regression check verified default `0.5` threshold metrics (ROC-AUC `0.8469`, F1 `0.5898`) match Phase 7 training report within `1e-4` tolerance.
+  - Decision threshold optimization along Precision-Recall curve identified optimal threshold ($\approx 0.35$), improving operational F1 from `0.5898` to `0.6432` (exceeding Logistic Regression's default F1 of `0.6032`).
+  - Persisted JSON reports: `reports/evaluation_metrics.json`, `models/decision_threshold.json`, `reports/classification_report.json`, `reports/calibration_metrics.json`.
+  - Persisted CSV reports: `reports/feature_importance.csv` and `reports/error_analysis.csv`.
+  - Generated all 6 visualization plots in `reports/plots/`: `confusion_matrix.png`, `feature_importance.png`, `roc_curve.png`, `precision_recall_curve.png`, `calibration_curve.png`, `prediction_distribution.png`.
+  - Unit tests in `tests/unit/test_evaluation.py` verify threshold optimization, metric computation, Brier loss, decision threshold JSON schema, and 100% reproducibility.
+- **ADRs Created:** [`docs/adr/0004-model-evaluation-threshold-optimization-and-calibration.md`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0004-model-evaluation-threshold-optimization-and-calibration.md).
+- **Architectural Impact:**
+  - **New Modules Introduced:** `src/training/evaluate.py`, `docs/adr/0004-model-evaluation-threshold-optimization-and-calibration.md`, `tests/unit/test_evaluation.py`.
+  - **Modified Modules:** `pyproject.toml`, `src/core/config.py`, `src/training/__init__.py`, `tasks.py`.
+  - **Public Interfaces Added:** `evaluate_model()`, `optimize_threshold()`, `generate_evaluation_report()`, `plot_feature_importance()`, `plot_confusion_matrix()`, `py -3.12 tasks.py evaluate`.
+- **Next Phase:** Phase 9 (MLflow & Promotion Policy)
