@@ -255,6 +255,41 @@ def task_serve() -> None:
         print("\nFastAPI prediction service stopped.")
 
 
+def task_docker_build() -> None:
+    """Build Docker container image for FastAPI prediction service."""
+    print("--- Building Docker Container Image ---")
+    run_cmd(["docker", "build", "-t", "telco-churn-api:latest", "."])
+
+
+def task_docker_run() -> None:
+    """Run Docker container image locally with host bind mounts mapping port 8000."""
+    print("--- Running Docker Container with Host Bind Mounts ---")
+    models_dir = (PROJECT_ROOT / "models").resolve()
+    mlruns_dir = (PROJECT_ROOT / "mlruns").resolve()
+    db_path = (PROJECT_ROOT / "mlflow.db").resolve()
+    try:
+        run_cmd(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "-p",
+                "8000:8000",
+                "-v",
+                f"{models_dir}:/app/models:ro",
+                "-v",
+                f"{mlruns_dir}:/app/mlruns:ro",
+                "-v",
+                f"{db_path}:/app/mlflow.db:rw",
+                "--name",
+                "telco-churn-api-container",
+                "telco-churn-api:latest",
+            ]
+        )
+    except KeyboardInterrupt:
+        print("\nDocker container stopped.")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -275,6 +310,8 @@ def main() -> None:
             "evaluate",
             "promote",
             "serve",
+            "docker-build",
+            "docker-run",
         ],
         help="Target task to execute",
     )
@@ -293,6 +330,8 @@ def main() -> None:
         "evaluate": task_evaluate,
         "promote": task_promote,
         "serve": task_serve,
+        "docker-build": task_docker_build,
+        "docker-run": task_docker_run,
     }
     tasks[args.target]()
 

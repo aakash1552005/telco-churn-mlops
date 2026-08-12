@@ -20,8 +20,8 @@ This document tracks the progress, status, verification evidence, and known issu
 
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Completed | 2026-08-11 | `bf03142` |
 
-| Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Completed | 2026-08-12 | pending_commit |
-| Phase 11 | Docker Containerization | Milestone 1 | Tier A | Pending | - | - |
+| Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Completed | 2026-08-12 | `77467c9` |
+| Phase 11 | Docker Containerization | Milestone 1 | Tier A | Completed | 2026-08-12 | pending_commit |
 | Phase 0 | Infrastructure Prerequisites | Prerequisites | Tier B | Pending | - | - |
 | Phase 12 | AWS ECR Pipeline | Milestone 2 | Tier B | Pending | - | - |
 | Phase 13 | Kubernetes Deployment | Milestone 2 | Tier B | Pending | - | - |
@@ -157,7 +157,7 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 10: FastAPI Prediction Service & Security Baseline
 - **Status:** Completed
 - **Date:** 2026-08-12
-- **Commit:** `feat: add FastAPI prediction service with auth`
+- **Commit:** `77467c9` (`feat: add FastAPI prediction service with auth`)
 - **Verification Evidence:**
   - Standardized REST API using FastAPI serving registered MLflow Production model (`sqlite:///mlflow.db`).
   - Feature transformation applies Phase 6 `models/feature_pipeline.joblib` (19 raw fields -> 49 features), validates against `models/feature_schema.json` via Phase 7 `validate_feature_schema()`, and applies Phase 8 `models/decision_threshold.json` optimal decision threshold.
@@ -170,3 +170,19 @@ This document tracks the progress, status, verification evidence, and known issu
   - **Modified Modules:** `src/inference/__init__.py`, `src/api/__init__.py`, `tasks.py`.
   - **Public Interfaces Added:** `POST /predict`, `GET /health`, `/health/liveness`, `/health/readiness`, `GET /version`, `GET /metrics`, `GET /model-info`, `POST /reload`, `py -3.12 tasks.py serve`.
 - **Next Phase:** Phase 11 (Docker Containerization)
+
+### Phase 11: Docker Containerization
+- **Status:** Completed
+- **Date:** 2026-08-12
+- **Commit:** `feat: containerize prediction service with multi-stage Dockerfile`
+- **Verification Evidence:**
+  - Implemented multi-stage `Dockerfile` (`python:3.12-slim` base) with build/runtime isolation, non-root user execution (`appuser`, UID 10001), Docker `HEALTHCHECK` instruction hitting `/health/liveness`, and exposed port `8000`.
+  - Configured `.dockerignore` excluding `.git`, `.venv`, `__pycache__`, data directories (`data/`), reports (`reports/`), secrets (`.env`), and test artifacts.
+  - Extended CLI task runner (`tasks.py`) with `py -3.12 tasks.py docker-build` and `py -3.12 tasks.py docker-run`.
+  - Added unit test suite in [`tests/unit/test_docker.py`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/tests/unit/test_docker.py) verifying Dockerfile structure, non-root user, healthcheck instruction, `.dockerignore` exclusions, and CLI task registration.
+- **ADRs Created:** None for Phase 11.
+- **Architectural Impact:**
+  - **New Modules Introduced:** `Dockerfile`, `.dockerignore`, `tests/unit/test_docker.py`.
+  - **Modified Modules:** `tasks.py`, `PROJECT_PROGRESS.md`.
+  - **Public Interfaces Added:** `py -3.12 tasks.py docker-build`, `py -3.12 tasks.py docker-run`.
+- **Next Phase:** Phase 0 (Infrastructure Prerequisites) / Phase 12 (AWS ECR Pipeline)

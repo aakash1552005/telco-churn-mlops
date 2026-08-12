@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Development Data & Artifacts (not needed in API image)
+data/
+reports/
+docs/
+
+# Secrets & Environment Files
+.env
+.env.example
+*.pem
+*.key
+
+# DVC
+.dvc/
+.dvcignore
+
+# OS metadata
+.DS_Store
+Thumbs.db

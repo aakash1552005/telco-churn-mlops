@@ -148,7 +148,7 @@ class Settings(BaseSettings):
     # MLflow & Model Registry Settings
     MLFLOW_TRACKING_URI: str = "sqlite:///mlflow.db"
     MLFLOW_EXPERIMENT_NAME: str = "telco-churn-prediction"
-    MLFLOW_MODEL_NAME: str = "telco-churn-model"
+    MLFLOW_MODEL_NAME: str = "telco-churn-classifier"
     PROMOTION_POLICY_PATH: str = Field(
         default="models/promotion_policy.json",
         description="Path to versioned model promotion policy JSON artifact",
