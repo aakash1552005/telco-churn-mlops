@@ -160,6 +160,7 @@ def test_generate_evaluation_report_artifacts(
         metadata_path=ds["metadata_path"],
         output_dir=ds["reports_dir"],
         plots_dir=ds["plots_dir"],
+        threshold_path=ds["models_dir"] / "decision_threshold.json",
     )
 
     assert "model_algorithm" in results
@@ -172,13 +173,13 @@ def test_generate_evaluation_report_artifacts(
     assert (ds["reports_dir"] / "classification_report.json").exists()
     assert (ds["reports_dir"] / "calibration_metrics.json").exists()
 
-    # Verify decision_threshold.json in models_dir if saved via settings or reports_dir
+    # Verify decision_threshold.json in models_dir
     thresh_file = ds["models_dir"] / "decision_threshold.json"
-    if thresh_file.exists():
-        with open(thresh_file, "r", encoding="utf-8") as f:
-            t_data = json.load(f)
-        assert "optimal_threshold" in t_data
-        assert 0.0 < t_data["optimal_threshold"] < 1.0
+    assert thresh_file.exists()
+    with open(thresh_file, "r", encoding="utf-8") as f:
+        t_data = json.load(f)
+    assert "optimal_threshold" in t_data
+    assert 0.0 < t_data["optimal_threshold"] < 1.0
 
     # Verify Plots
     p_dir = ds["plots_dir"]
@@ -201,6 +202,7 @@ def test_evaluation_reproducibility(synthetic_eval_dataset: Dict[str, Any]) -> N
         metadata_path=ds["metadata_path"],
         output_dir=ds["reports_dir"] / "run1",
         plots_dir=ds["plots_dir"] / "run1",
+        threshold_path=ds["reports_dir"] / "run1" / "decision_threshold.json",
     )
 
     res2 = generate_evaluation_report(
@@ -210,6 +212,7 @@ def test_evaluation_reproducibility(synthetic_eval_dataset: Dict[str, Any]) -> N
         metadata_path=ds["metadata_path"],
         output_dir=ds["reports_dir"] / "run2",
         plots_dir=ds["plots_dir"] / "run2",
+        threshold_path=ds["reports_dir"] / "run2" / "decision_threshold.json",
     )
 
     assert res1["metrics_at_threshold_0_5"] == res2["metrics_at_threshold_0_5"]
