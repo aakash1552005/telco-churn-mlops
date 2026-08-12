@@ -1,0 +1,40 @@
+# ==============================================================================
+# Phase 11 — Docker Compose Local Development & Serving Specification
+#
+# ARCHITECTURAL SEPARATION & STORAGE CONTRACT:
+# - Image contains: application code (src/), dependencies (/opt/venv), entrypoint.
+# - Host bind mounts provide: models/, mlruns/, and mlflow.db.
+#
+# SQLite database (mlflow.db) and MLflow tracking store (mlruns/) are mounted
+# from host so host-side retraining (Phase 18) updates artifacts directly
+# without rebuilding container images.
+# ==============================================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: telco-churn-api:latest
+    container_name: telco-churn-api-container
+    ports:
+      - "8001:8000"
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - MLFLOW_TRACKING_URI=sqlite:////app/mlflow.db
+      - MLFLOW_MODEL_NAME=telco-churn-classifier
+      - API_KEY=dev-secret-key-123
+    volumes:
+      # Host BIND MOUNTS: Mutable ML artifacts mounted from host.
+      - ./models:/app/models:ro
+      - ./mlruns:/app/mlruns:ro
+      - ./mlflow.db:/app/mlflow.db:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
