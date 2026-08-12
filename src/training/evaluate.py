@@ -563,6 +563,7 @@ def generate_evaluation_report(
     metadata_path: Optional[Path] = None,
     output_dir: Optional[Path] = None,
     plots_dir: Optional[Path] = None,
+    threshold_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Execute end-to-end evaluation, threshold optimization, calibration, and plotting.
 
@@ -676,7 +677,9 @@ def generate_evaluation_report(
             "recall": default_metrics["recall"],
         },
     }
-    thresh_file = Path(settings.DECISION_THRESHOLD_PATH)
+    thresh_file = threshold_path or Path(settings.DECISION_THRESHOLD_PATH)
+    if output_dir and not threshold_path:
+        thresh_file = output_dir / "decision_threshold.json"
     thresh_file.parent.mkdir(parents=True, exist_ok=True)
     with open(thresh_file, "w", encoding="utf-8") as f:
         json.dump(thresh_payload, f, indent=2)

@@ -232,6 +232,29 @@ def task_promote() -> None:
     print(f"MLflow Tracking URI: '{settings.MLFLOW_TRACKING_URI}'")
 
 
+def task_serve() -> None:
+    """Run uvicorn dev server for FastAPI prediction service."""
+    print("--- Starting FastAPI Prediction Service ---")
+    from src.core.config import get_settings
+
+    settings = get_settings()
+    try:
+        run_cmd(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "src.api.app:app",
+                "--host",
+                settings.API_HOST,
+                "--port",
+                str(settings.API_PORT),
+            ]
+        )
+    except KeyboardInterrupt:
+        print("\nFastAPI prediction service stopped.")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -251,6 +274,7 @@ def main() -> None:
             "train",
             "evaluate",
             "promote",
+            "serve",
         ],
         help="Target task to execute",
     )
@@ -268,6 +292,7 @@ def main() -> None:
         "train": task_train,
         "evaluate": task_evaluate,
         "promote": task_promote,
+        "serve": task_serve,
     }
     tasks[args.target]()
 

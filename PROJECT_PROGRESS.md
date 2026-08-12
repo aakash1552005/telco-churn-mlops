@@ -18,8 +18,9 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 8 | Model Evaluation & Metrics | Milestone 1 | Tier A | Completed | 2026-08-11 | `aff9971` |
 
 
-| Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Pending | - | - |
-| Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Pending | - | - |
+| Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Completed | 2026-08-11 | `bf03142` |
+
+| Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Completed | 2026-08-12 | pending_commit |
 | Phase 11 | Docker Containerization | Milestone 1 | Tier A | Pending | - | - |
 | Phase 0 | Infrastructure Prerequisites | Prerequisites | Tier B | Pending | - | - |
 | Phase 12 | AWS ECR Pipeline | Milestone 2 | Tier B | Pending | - | - |
@@ -134,3 +135,38 @@ This document tracks the progress, status, verification evidence, and known issu
   - **Modified Modules:** `pyproject.toml`, `src/core/config.py`, `src/training/__init__.py`, `tasks.py`.
   - **Public Interfaces Added:** `evaluate_model()`, `optimize_threshold()`, `generate_evaluation_report()`, `plot_feature_importance()`, `plot_confusion_matrix()`, `py -3.12 tasks.py evaluate`.
 - **Next Phase:** Phase 9 (MLflow & Promotion Policy)
+
+### Phase 9: MLflow Integration & Promotion Policy
+- **Status:** Completed
+- **Date:** 2026-08-11
+- **Commit:** `bf03142` (`feat: integrate MLflow tracking and promotion policy`)
+- **Verification Evidence:**
+  - Configured MLflow tracking URI to local SQLite database store (`sqlite:///mlflow.db`) to enable local Model Registry functionality.
+  - Operationalized Master Contract Section 9 rules into versioned artifact [`models/promotion_policy.json`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/models/promotion_policy.json) (`min_f1_improvement: 0.01`, `max_precision_drop: 0.02`, `max_recall_drop: 0.0`).
+  - Executed bootstrap promotion: initial candidate model (`XGBClassifier` v1) auto-promoted to `"Production"` stage with logged reason `"no existing production model — initial promotion"`.
+  - Logged parent MLflow run for `XGBClassifier` (model artifact, parameters, metrics, 6 plots, CSVs, JSONs).
+  - Logged nested child run for `LogisticRegression` as a metrics-only historical baseline with zero model artifact attached and tagged `model_status: metrics_only_historical, no_persisted_estimator`.
+  - Added unit test suite in [`tests/unit/test_promotion.py`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/tests/unit/test_promotion.py) (9 tests passing) verifying bootstrap promotion, Section 9 criteria evaluation, exact threshold edge cases, metrics-only LR child run, and out-of-process registry persistence using a fresh `MlflowClient` instance.
+- **ADRs Created:** [`docs/adr/0005-mlflow-tracking-and-model-promotion-policy.md`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/docs/adr/0005-mlflow-tracking-and-model-promotion-policy.md).
+- **Architectural Impact:**
+  - **New Modules Introduced:** `src/training/promotion.py`, `models/promotion_policy.json`, `docs/adr/0005-mlflow-tracking-and-model-promotion-policy.md`, `tests/unit/test_promotion.py`.
+  - **Modified Modules:** `.env`, `.env.example`, `.gitignore`, `src/core/config.py`, `src/training/__init__.py`, `tasks.py`.
+  - **Public Interfaces Added:** `promote_model()`, `compare_candidate_to_incumbent()`, `load_promotion_policy()`, `log_pipeline_run_to_mlflow()`, `py -3.12 tasks.py promote`.
+- **Next Phase:** Phase 10 (FastAPI & Security Baseline)
+
+### Phase 10: FastAPI Prediction Service & Security Baseline
+- **Status:** Completed
+- **Date:** 2026-08-12
+- **Commit:** `feat: add FastAPI prediction service with auth`
+- **Verification Evidence:**
+  - Standardized REST API using FastAPI serving registered MLflow Production model (`sqlite:///mlflow.db`).
+  - Feature transformation applies Phase 6 `models/feature_pipeline.joblib` (19 raw fields -> 49 features), validates against `models/feature_schema.json` via Phase 7 `validate_feature_schema()`, and applies Phase 8 `models/decision_threshold.json` optimal decision threshold.
+  - Implemented `X-API-Key` authentication dependency enforcing Master Contract Section 11, `slowapi` rate limiting (`60/minute`), `CORSMiddleware`, and non-PII structured request logging middleware (`get_logger(__name__)`).
+  - Implemented endpoints: `POST /predict`, `GET /health`, `/health/liveness`, `/health/readiness`, `GET /version`, `GET /metrics` (stub), `GET /model-info`, and `POST /reload`.
+  - Added unit and integration test suite in [`tests/unit/test_api.py`](file:///c:/Users/AAKASH.S.S/OneDrive/Desktop/Pipelines/tests/unit/test_api.py) (11 tests passing, 60 total tests passing clean in test runner) including explicit isolated tests `test_offline_online_prediction_consistency` and `test_reload_roundtrip`.
+- **ADRs Created:** None for Phase 10.
+- **Architectural Impact:**
+  - **New Modules Introduced:** `src/inference/service.py`, `src/api/schemas.py`, `src/api/security.py`, `src/api/routes.py`, `src/api/app.py`, `tests/unit/test_api.py`.
+  - **Modified Modules:** `src/inference/__init__.py`, `src/api/__init__.py`, `tasks.py`.
+  - **Public Interfaces Added:** `POST /predict`, `GET /health`, `/health/liveness`, `/health/readiness`, `GET /version`, `GET /metrics`, `GET /model-info`, `POST /reload`, `py -3.12 tasks.py serve`.
+- **Next Phase:** Phase 11 (Docker Containerization)
