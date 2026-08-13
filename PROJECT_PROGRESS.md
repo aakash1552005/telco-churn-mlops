@@ -21,7 +21,7 @@ This document tracks the progress, status, verification evidence, and known issu
 | Phase 9 | MLflow & Promotion Policy | Milestone 1 | Tier A | Completed | 2026-08-11 | `bf03142` |
 
 | Phase 10 | FastAPI & Security Baseline | Milestone 1 | Tier A | Completed | 2026-08-12 | `77467c9` |
-| Phase 11 | Docker Containerization | Milestone 1 | Tier A | Completed | 2026-08-12 | `b41fe4e` |
+| Phase 11 | Docker Containerization | Milestone 1 | Tier A | Completed | 2026-08-13 | `7585586` |
 | Phase 0 | Infrastructure Prerequisites | Prerequisites | Tier B | Pending | - | - |
 | Phase 12 | AWS ECR Pipeline | Milestone 2 | Tier B | Pending | - | - |
 | Phase 13 | Kubernetes Deployment | Milestone 2 | Tier B | Pending | - | - |
@@ -174,7 +174,7 @@ This document tracks the progress, status, verification evidence, and known issu
 ### Phase 11: Docker Containerization
 - **Status:** Completed
 - **Date:** 2026-08-12
-- **Commit:** `b41fe4e` (`feat: containerize prediction service with multi-stage Dockerfile`)
+- **Commit:** `7585586` (`feat: containerize prediction service with digest pinning and secure configuration`)
 - **Verification Evidence:**
   - Implemented multi-stage `Dockerfile` (`python:3.12-slim` base) with build/runtime isolation, non-root user execution (`appuser`, UID 10001), Docker `HEALTHCHECK` instruction hitting `/health/liveness`, and exposed port `8000`.
   - Configured `.dockerignore` excluding `.git`, `.venv`, `__pycache__`, data directories (`data/`), reports (`reports/`), secrets (`.env`), and test artifacts.
