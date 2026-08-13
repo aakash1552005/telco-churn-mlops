@@ -256,9 +256,41 @@ def task_serve() -> None:
 
 
 def task_docker_build() -> None:
-    """Build Docker container image for FastAPI prediction service."""
+    """Build Docker container image with dynamic OCI build-args for FastAPI service."""
     print("--- Building Docker Container Image ---")
-    run_cmd(["docker", "build", "-t", "telco-churn-api:latest", "."])
+    import datetime
+    import subprocess
+
+    try:
+        git_commit = (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
+            )
+            .decode()
+            .strip()
+        )
+    except Exception:
+        git_commit = "unknown"
+
+    build_date = datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    version = "1.0.0"
+
+    cmd = [
+        "docker",
+        "build",
+        "-t",
+        "telco-churn-api:latest",
+        "--build-arg",
+        f"BUILD_DATE={build_date}",
+        "--build-arg",
+        f"GIT_COMMIT={git_commit}",
+        "--build-arg",
+        f"VERSION={version}",
+        ".",
+    ]
+    run_cmd(cmd)
 
 
 def task_docker_run() -> None:

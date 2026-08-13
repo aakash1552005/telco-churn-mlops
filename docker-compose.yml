@@ -19,13 +19,15 @@ services:
     container_name: telco-churn-api-container
     ports:
       - "8001:8000"
+    env_file:
+      - .env
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=${ENVIRONMENT:-development}
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - MLFLOW_TRACKING_URI=sqlite:////app/mlflow.db
       - MLFLOW_MODEL_NAME=telco-churn-classifier
-      - API_KEY=dev-secret-key-123
+      - API_SECRET_KEYS=["${API_KEY:-dev-secret-key-123}"]
     volumes:
       # Host BIND MOUNTS: Mutable ML artifacts mounted from host.
       - ./models:/app/models:ro

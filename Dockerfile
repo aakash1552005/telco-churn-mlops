@@ -10,7 +10,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Builder Stage
 # ------------------------------------------------------------------------------
-FROM python:3.12.3-slim-bookworm AS builder
+FROM python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 AS builder
 
 WORKDIR /build
 
@@ -39,14 +39,21 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # ------------------------------------------------------------------------------
 # Stage 2: Production Runner Stage
 # ------------------------------------------------------------------------------
-FROM python:3.12.3-slim-bookworm AS runner
+FROM python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 AS runner
+
+ARG BUILD_DATE
+ARG GIT_COMMIT
+ARG VERSION="1.0.0"
 
 # OCI Image Specification Metadata Labels
 LABEL org.opencontainers.image.title="Telco Churn Prediction API" \
       org.opencontainers.image.description="Production REST API serving registered MLflow models with feature transformation and optimal thresholding" \
       org.opencontainers.image.vendor="Telco MLOps Team" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.schema-version="1.0.0"
+      org.opencontainers.image.schema-version="1.0.0" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.version="${VERSION}"
 
 WORKDIR /app
 

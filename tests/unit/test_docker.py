@@ -10,13 +10,17 @@ def test_dockerfile_structure_and_best_practices() -> None:
 
     content = dockerfile_path.read_text(encoding="utf-8")
 
-    # Multi-stage build check
-    assert "FROM python:3.12.3-slim-bookworm AS builder" in content
-    assert "FROM python:3.12.3-slim-bookworm AS runner" in content
+    # Multi-stage build & digest pinning check
+    d_sub = "sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63"
+    assert f"FROM python:3.12.3-slim-bookworm@{d_sub} AS builder" in content
+    assert f"FROM python:3.12.3-slim-bookworm@{d_sub} AS runner" in content
 
     # OCI Metadata labels check
     assert "org.opencontainers.image.title=" in content
     assert "org.opencontainers.image.description=" in content
+    assert "org.opencontainers.image.created" in content
+    assert "org.opencontainers.image.revision" in content
+    assert "org.opencontainers.image.version" in content
 
     # Non-root user check
     assert "useradd" in content or "appuser" in content
@@ -51,8 +55,8 @@ def test_dockerignore_exclusions() -> None:
     assert "reports/" in ignored_patterns
 
 
-def test_docker_compose_bind_mounts() -> None:
-    """Test docker-compose.yml configures host bind mounts for ML artifacts."""
+def test_docker_compose_no_literal_secrets() -> None:
+    """Test docker-compose.yml configures host mounts and no secret keys."""
     compose_path = PROJECT_ROOT / "docker-compose.yml"
     assert compose_path.exists(), "docker-compose.yml must exist at project root."
 
@@ -62,6 +66,10 @@ def test_docker_compose_bind_mounts() -> None:
     assert "./mlflow.db:/app/mlflow.db:rw" in content
     assert "healthcheck:" in content
     assert "http://localhost:8000/health/readiness" in content
+    err1 = "docker-compose.yml must NOT contain hardcoded secret values."
+    assert "API_KEY=dev-secret-key-123" not in content, err1
+    err2 = "docker-compose.yml must use ${API_KEY} substitution."
+    assert 'API_SECRET_KEYS=["${API_KEY' in content, err2
 
 
 def test_docker_task_functions_registered() -> None:
