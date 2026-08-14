@@ -1,0 +1,8 @@
+﻿{
+    "repository_name":  "telco-churn-api",
+    "region":  "ap-south-1",
+    "image_tag":  "0595515",
+    "image_digest":  "sha256:c83794bdfc73e82e179e2f11cfadb86630700fdd62cc577c8de8922fd3ee6822",
+    "repository_uri":  "899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api",
+    "push_timestamp":  "2026-08-14T11:20:17Z"
+}
