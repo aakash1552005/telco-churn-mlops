@@ -82,7 +82,6 @@ def update_model_info(version: str) -> None:
     Args:
         version: Model version identifier string (e.g. '1', '2').
     """
-    global _ACTIVE_VERSION_GAUGES
     # Clear prior gauge labels to ensure only 1 version gauge is active at a time
     for old_ver in list(_ACTIVE_VERSION_GAUGES.keys()):
         if old_ver != version:
