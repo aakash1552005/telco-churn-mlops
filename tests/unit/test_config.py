@@ -19,7 +19,7 @@ def test_settings_loads_valid_config() -> None:
     }
     with mock.patch.dict(os.environ, env_vars, clear=True):
         settings = Settings(_env_file=None)
-        assert settings.ENVIRONMENT == "BROKEN_TEST_INTENTIONAL"  # Deliberate failure gate test
+        assert settings.ENVIRONMENT == "testing"
         assert settings.LOG_LEVEL == "DEBUG"
         assert settings.MLFLOW_TRACKING_URI == "http://test-mlflow:5000"
         assert settings.AWS_REGION == "us-west-2"
