@@ -153,6 +153,11 @@ pipeline {
             steps {
                 echo '=== Stage 11: Deploy Manifests to Minikube (Excluding secret.yaml) ==='
                 sh """
+                    echo "--> Syncing image to Minikube local container cache..."
+                    if docker ps --format '{{.Names}}' | grep -q '^minikube\$'; then
+                        docker save \${IMAGE_URI}:\${GIT_COMMIT_SHORT} | docker exec -i minikube docker load || true
+                    fi
+
                     echo "--> Applying non-secret Kubernetes manifests..."
                     # NOTE (Phase 13 hardening): Explicitly apply individual manifests to avoid overwriting live secret
                     kubectl apply -f infra/k8s/configmap.yaml
@@ -163,8 +168,8 @@ pipeline {
                     kubectl apply -f infra/k8s/hpa.yaml
                     kubectl apply -f infra/k8s/pdb.yaml
 
-                    echo "--> Updating deployment image to immutable tag \${IMAGE_URI}:${env.GIT_COMMIT_SHORT}..."
-                    kubectl set image deployment/telco-churn-api telco-churn-api=\${IMAGE_URI}:${env.GIT_COMMIT_SHORT}
+                    echo "--> Updating deployment image to immutable tag \${IMAGE_URI}:\${GIT_COMMIT_SHORT}..."
+                    kubectl set image deployment/telco-churn-api telco-churn-api=\${IMAGE_URI}:\${GIT_COMMIT_SHORT}
 
                     echo "--> Waiting for rollout completion..."
                     kubectl rollout status deployment/telco-churn-api --timeout=180s
