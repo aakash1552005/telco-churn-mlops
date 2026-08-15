@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: default
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+
+    scrape_configs:
+      - job_name: "telco-churn-api"
+        metrics_path: "/metrics"
+        static_configs:
+          - targets: ["telco-churn-api:8000"]
+            labels:
+              app: "telco-churn-api"

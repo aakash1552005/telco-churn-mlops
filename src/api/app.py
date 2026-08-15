@@ -15,6 +15,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from src.api.metrics import (
+    TELCO_REQUEST_DURATION_SECONDS,
+    record_api_error_metric,
+    update_model_info,
+)
 from src.api.routes import router
 from src.core.config import get_settings
 from src.core.logging import get_logger
@@ -41,6 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Executing FastAPI application startup lifespan...")
     try:
         prediction_service.load_production_model()
+        update_model_info(prediction_service.model_version)
         logger.info(
             f"Startup complete: Production model version "
             f"{prediction_service.model_version} ready for inference."
@@ -91,21 +97,34 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Structured Request Logging Middleware (NON-PII)
+    # Structured Request Logging & Prometheus Metrics Middleware (NON-PII)
     @app.middleware("http")
     async def log_requests_middleware(request: Request, call_next: Any) -> Response:
         start_time = time.perf_counter()
         response: Response = await call_next(request)
-        process_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        duration_s = time.perf_counter() - start_time
+        process_time_ms = round(duration_s * 1000, 2)
 
         client_host = request.client.host if request.client else "unknown"
+        path = request.url.path
+
+        # Record Prometheus Request Latency Histogram (all requests)
+        TELCO_REQUEST_DURATION_SECONDS.labels(
+            method=request.method,
+            endpoint=path,
+            status_code=str(response.status_code),
+        ).observe(duration_s)
+
+        # Record Prometheus Error Counter for 4xx/5xx (skipping /metrics endpoint)
+        if response.status_code >= 400 and path != "/metrics":
+            record_api_error_metric(response.status_code)
 
         # Log metadata only — NO customer request body payload logged (NO PII)
         logger.info(
             "API HTTP Request processed",
             extra={
                 "method": request.method,
-                "path": request.url.path,
+                "path": path,
                 "status_code": response.status_code,
                 "process_time_ms": process_time_ms,
                 "client_host": client_host,

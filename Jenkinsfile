@@ -167,12 +167,16 @@ pipeline {
                     kubectl apply -f infra/k8s/service.yaml
                     kubectl apply -f infra/k8s/hpa.yaml
                     kubectl apply -f infra/k8s/pdb.yaml
+                    kubectl apply -f infra/k8s/prometheus-configmap.yaml
+                    kubectl apply -f infra/k8s/prometheus-deployment.yaml
+                    kubectl apply -f infra/k8s/prometheus-service.yaml
 
                     echo "--> Updating deployment image to immutable tag \${IMAGE_URI}:\${GIT_COMMIT_SHORT}..."
                     kubectl set image deployment/telco-churn-api telco-churn-api=\${IMAGE_URI}:\${GIT_COMMIT_SHORT}
 
                     echo "--> Waiting for rollout completion..."
                     kubectl rollout status deployment/telco-churn-api --timeout=180s
+                    kubectl rollout status deployment/prometheus --timeout=180s
                 """
             }
         }

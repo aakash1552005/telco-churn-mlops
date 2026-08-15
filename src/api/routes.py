@@ -3,8 +3,13 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse
 
+from src.api.metrics import (
+    get_metrics_response,
+    record_prediction_metric,
+    update_model_info,
+)
 from src.api.schemas import (
     HealthResponse,
     ModelInfoResponse,
@@ -86,16 +91,8 @@ def get_version() -> VersionResponse:
 
 @router.get("/metrics", tags=["Observability"])
 def get_metrics() -> Response:
-    """Prometheus metrics endpoint stub (Phase 15 integration placeholder)."""
-    metrics_stub = (
-        "# HELP telco_churn_predictions_total Total churn predictions executed.\n"
-        "# TYPE telco_churn_predictions_total counter\n"
-        'telco_churn_predictions_total{status="success"} 0\n'
-        "# HELP telco_churn_model_info Active model version info.\n"
-        "# TYPE telco_churn_model_info gauge\n"
-        f'telco_churn_model_info{{version="{prediction_service.model_version}"}} 1\n'
-    )
-    return PlainTextResponse(content=metrics_stub, media_type="text/plain")
+    """Prometheus metrics exposition endpoint (Phase 15 live implementation)."""
+    return get_metrics_response()
 
 
 @router.post(
@@ -116,6 +113,9 @@ def predict_churn(
     try:
         raw_dict = payload.model_dump()
         result = prediction_service.predict(raw_dict)
+
+        # Record Prometheus metric: telco_predictions_total{decision="Churn"|"No Churn"}
+        record_prediction_metric(result["decision"])
 
         # Log prediction outcome metadata (NO PII — no customer field values)
         logger.info(
@@ -182,6 +182,7 @@ def reload_model() -> ReloadResponse:
     """Reload Production model and threshold without process restart."""
     try:
         prediction_service.reload()
+        update_model_info(prediction_service.model_version)
         return ReloadResponse(
             status="success",
             message=(

@@ -99,12 +99,13 @@ def test_version(client: TestClient) -> None:
     assert data["project_name"] == settings.PROJECT_NAME
 
 
-def test_metrics_stub(client: TestClient) -> None:
-    """Verify /metrics stub endpoint returns Prometheus plain text content."""
+def test_metrics_endpoint(client: TestClient) -> None:
+    """Verify /metrics endpoint returns live Prometheus exposition content."""
     res = client.get("/metrics")
     assert res.status_code == 200
     assert "text/plain" in res.headers["content-type"]
-    assert "telco_churn_predictions_total" in res.text
+    assert "# TYPE telco_predictions_total counter" in res.text
+    assert "# TYPE telco_request_duration_seconds histogram" in res.text
 
 
 def test_predict_valid_sample(
