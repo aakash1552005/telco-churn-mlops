@@ -70,3 +70,7 @@ models/*.pkl
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Infra scratch & local secrets
+infra/jenkins/minikube-kubeconfig.yaml
+infra/k8s/scratch/
