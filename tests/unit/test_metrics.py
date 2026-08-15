@@ -57,7 +57,7 @@ def test_metrics_endpoint_exposition_format() -> None:
 
 
 def test_predictions_metric_increments_on_predict(
-    sample_valid_payload: Dict[str, Any]
+    sample_valid_payload: Dict[str, Any],
 ) -> None:
     """Verify /predict increments telco_predictions_total with bounded label."""
     app = create_app()
