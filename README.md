@@ -550,3 +550,34 @@ rollbacks trivial (`kubectl set image deployment/... image=...:previous-sha`).
 | `kubectl apply` fails with `unknown field` | API version mismatch | Verify K8s cluster version: `kubectl version` |
 | HPA shows `<unknown>/70%` CPU | metrics-server not running | `minikube addons enable metrics-server` |
 | `Error from server: secrets "telco-churn-secret" not found` | Real secret not created | Run Step 2 (`kubectl create secret`) |
+
+---
+
+## Phase 16 — Grafana Monitoring Dashboard
+
+### Overview
+
+Phase 16 deploys a dedicated **Grafana** instance in the local Minikube cluster. It automatically provisions:
+1. **Prometheus Datasource**: Points to `http://prometheus:9090` (in-cluster Prometheus service).
+2. **Telco Churn Production Telemetry Dashboard**: Complete visual dashboard with real-time graphs and telemetry for the API.
+
+### Access & Credentials
+
+- **Access URL**: `http://<minikube-ip>:30091` or run `minikube service grafana --url`
+- **Default Credentials**:
+  - Username: `admin`
+  - Password: `admin`
+  > **SECURITY NOTICE**: `admin`/`admin` credentials are configured strictly for local Minikube development and must never be used in a production environment.
+
+### Auto-Provisioned Panels
+
+| Panel | Type | Metric / Expression | Description |
+|---|---|---|---|
+| **API Service Health** | Stat | `up{app="telco-churn-api"}` | Instant cluster health status (`UP` / `DOWN`) |
+| **Active Model Version** | Stat | `telco_model_info` | Model version currently loaded and serving inference |
+| **Total Predictions** | Stat | `sum(telco_predictions_total) by (decision)` | Real-time prediction counter broken down by `Churn` vs `No Churn` |
+| **Data & Concept Drift Score** | Text | *Static Notice* | Placeholder explicitly marked **"Coming in Phase 17"** |
+| **Request Latency Percentiles** | Time Series | `histogram_quantile(0.50, ...)` / `(0.95, ...)` | p50 and p95 latency percentiles over time |
+| **Prediction Traffic Rate** | Time Series | `sum(rate(telco_predictions_total[1m])) by (decision)` | Requests per second by decision |
+| **Process CPU Usage Rate** | Time Series | `rate(process_cpu_seconds_total[1m])` | Real CPU core usage rate of the API process |
+| **Process Memory Usage** | Time Series | `process_resident_memory_bytes` / `process_virtual_memory_bytes` | RSS and VMS memory consumption |

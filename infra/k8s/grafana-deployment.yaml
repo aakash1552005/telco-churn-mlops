@@ -1,0 +1,66 @@
+# ==============================================================================
+# Phase 16 — Grafana Deployment
+#
+# Runs Grafana with auto-provisioned Prometheus datasource and Telco Churn dashboard.
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: default
+  labels:
+    app: grafana
+    phase: "16"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        phase: "16"
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: "admin"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "admin"
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: datasource-provisioning
+              mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+              subPath: datasources.yaml
+            - name: dashboard-provider-provisioning
+              mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+              subPath: dashboards.yaml
+            - name: dashboard-json-volume
+              mountPath: /var/lib/grafana/dashboards/telco-churn-dashboard.json
+              subPath: telco-churn-dashboard.json
+      volumes:
+        - name: datasource-provisioning
+          configMap:
+            name: grafana-datasource-config
+        - name: dashboard-provider-provisioning
+          configMap:
+            name: grafana-dashboard-config
+        - name: dashboard-json-volume
+          configMap:
+            name: grafana-dashboard-config

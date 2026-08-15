@@ -1,0 +1,23 @@
+# ==============================================================================
+# Phase 16 — Grafana Service
+#
+# NodePort service exposing Grafana UI at NodePort 30091 in Minikube.
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: default
+  labels:
+    app: grafana
+    phase: "16"
+spec:
+  type: NodePort
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30091

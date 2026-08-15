@@ -1,0 +1,28 @@
+# ==============================================================================
+# Phase 16 — Grafana Datasource Auto-Provisioning ConfigMap
+#
+# Automatically configures Prometheus as the default datasource on Grafana startup.
+# Target: http://prometheus:9090 (in-cluster Minikube DNS)
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-config
+  namespace: default
+  labels:
+    app: grafana
+    phase: "16"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        uid: prometheus-ds
+        editable: true
+        jsonData:
+          timeInterval: 5s
+          httpMethod: POST
