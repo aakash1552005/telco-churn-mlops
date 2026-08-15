@@ -1,0 +1,190 @@
+# ==============================================================================
+# Phase 13 — Kubernetes Deployment
+#
+# IMAGE PIN POLICY
+# ----------------
+# Image is pinned to git SHA tag (:0595515), NOT :latest.
+# Reason: :latest is mutable — the same tag can resolve to a different image
+# digest after a new push. A git SHA tag is immutable and reproducible. Update
+# the tag below after each new ECR push (Phase 12 script outputs the SHA).
+#
+# ECR AUTHENTICATION (choose one — see README Phase 13 section for details)
+# -------------------------------------------------------------------------
+# OPTION A (recommended for local Minikube — no AWS credentials in cluster):
+#   minikube image load 899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:0595515
+#   imagePullPolicy: IfNotPresent avoids unnecessary pulls.
+#
+# OPTION B (production-like ECR pull):
+#   kubectl create secret docker-registry ecr-credentials \
+#     --docker-server=899640267680.dkr.ecr.ap-south-1.amazonaws.com \
+#     --docker-username=AWS \
+#     --docker-password=$(aws ecr get-login-password --region ap-south-1)
+#   Then uncomment imagePullSecrets below.
+#
+# PROBE RATIONALE
+# ---------------
+# startupProbe  → /health/readiness: FastAPI loads MLflow registry, XGBoost model,
+#                 sklearn pipeline, threshold, and provenance verification on
+#                 startup. This is heavier than a plain REST API. The startup
+#                 probe grants a 5-minute window (30 × 10s) before liveness kicks
+#                 in, preventing premature OOMKill/CrashLoop on slow first load.
+# livenessProbe → /health/liveness: Lightweight — returns 200 if the process is
+#                 alive. Does NOT check model load (that's readiness).
+# readinessProbe→ /health/readiness: Returns 503 until model + pipeline loaded.
+#                 K8s will not route traffic until this returns 200.
+#
+# RESOURCE SIZING RATIONALE
+# --------------------------
+# requests.cpu    250m  — uvicorn + XGBoost inference is not CPU-bound at idle.
+# requests.memory 512Mi — FastAPI + sklearn pipeline + XGBoost model in RAM.
+# limits.cpu      1000m — allows burst during batch requests; capped at 1 core
+#                         to avoid starving Minikube's single node.
+# limits.memory   1Gi   — generous headroom for MLflow + model; still well within
+#                         a typical Minikube node (2–4 Gi).
+#
+# ROLLING UPDATE STRATEGY
+# -----------------------
+# maxSurge: 1       — spin up one new pod before terminating old (zero downtime).
+# maxUnavailable: 0 — never take an existing pod down while no replacement is ready.
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telco-churn-api
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "13"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telco-churn-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: telco-churn-api
+        phase: "13"
+    spec:
+      # -----------------------------------------------------------------------
+      # ECR OPTION B: Uncomment imagePullSecrets when using kubectl create secret
+      # docker-registry. Leave commented when using minikube image load (Option A).
+      # -----------------------------------------------------------------------
+      # imagePullSecrets:
+      #   - name: ecr-credentials
+
+      containers:
+        - name: telco-churn-api
+          # -------------------------------------------------------------------
+          # IMAGE: Pinned to git SHA for reproducibility.
+          # Update :0595515 to the new git SHA after each `push_to_ecr.ps1` run.
+          # -------------------------------------------------------------------
+          image: 899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:0595515
+          # IfNotPresent: use locally loaded image (Option A) or cached pull;
+          # avoids re-pulling from ECR on every pod restart.
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          # ------------------------------------------------------------------
+          # Environment: non-secret values from ConfigMap, secret from Secret
+          # ------------------------------------------------------------------
+          envFrom:
+            - configMapRef:
+                name: telco-churn-config
+            - secretRef:
+                name: telco-churn-secret
+
+          # ------------------------------------------------------------------
+          # STARTUP PROBE
+          # Gives the container up to 30 × 10s = 5 minutes to become ready
+          # before liveness kicks in. Prevents CrashLoopBackOff during heavy
+          # MLflow + model initialization at first start.
+          # ------------------------------------------------------------------
+          startupProbe:
+            httpGet:
+              path: /health/readiness
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30  # 30 × 10s = 5 min startup window
+            successThreshold: 1
+            timeoutSeconds: 5
+
+          # ------------------------------------------------------------------
+          # LIVENESS PROBE
+          # Lightweight process-alive check. Does not verify model load.
+          # Only activates after startupProbe succeeds.
+          # ------------------------------------------------------------------
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8000
+            initialDelaySeconds: 0   # startupProbe already waited
+            periodSeconds: 30
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+
+          # ------------------------------------------------------------------
+          # READINESS PROBE
+          # Returns 503 until MLflow model + pipeline are loaded.
+          # K8s will not send traffic until this returns 200.
+          # ------------------------------------------------------------------
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: 8000
+            initialDelaySeconds: 0   # startupProbe already waited
+            periodSeconds: 15
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+
+          # ------------------------------------------------------------------
+          # RESOURCE REQUESTS & LIMITS (see sizing rationale in header comment)
+          # ------------------------------------------------------------------
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # ------------------------------------------------------------------
+          # VOLUME MOUNTS
+          # PVC 1 (models): read-only — model artifacts don't change at runtime.
+          # PVC 2 (mlflow): read-write — MLflow writes experiment tracking data.
+          # ------------------------------------------------------------------
+          volumeMounts:
+            - name: models-volume
+              mountPath: /app/models
+              readOnly: true
+            - name: mlflow-volume
+              mountPath: /app/mlruns
+              subPath: mlruns
+              readOnly: false
+            - name: mlflow-volume
+              mountPath: /app/mlflow.db
+              subPath: mlflow.db
+              readOnly: false
+
+      # -----------------------------------------------------------------------
+      # VOLUMES: reference the two PVCs defined in pvc.yaml
+      # -----------------------------------------------------------------------
+      volumes:
+        - name: models-volume
+          persistentVolumeClaim:
+            claimName: telco-models-pvc
+        - name: mlflow-volume
+          persistentVolumeClaim:
+            claimName: telco-mlflow-pvc

@@ -1,0 +1,27 @@
+# ==============================================================================
+# Phase 13 — PodDisruptionBudget
+#
+# Guarantees at least 1 pod remains available during voluntary disruptions
+# (node drain, rolling updates, cluster maintenance).
+#
+# On a single Minikube node, this won't be exercised — there are no other nodes
+# to drain to. It is included because:
+#   1. It is production-standard and zero-cost to define.
+#   2. It will carry forward intact to EKS multi-node deployments (Phase 14+)
+#      without any changes.
+#   3. It documents intent: this service should never be fully unavailable
+#      during planned maintenance, regardless of cluster topology.
+# ==============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: telco-churn-api-pdb
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "13"
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: telco-churn-api

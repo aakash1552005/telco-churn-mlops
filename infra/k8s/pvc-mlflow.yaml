@@ -1,0 +1,31 @@
+# ==============================================================================
+# Phase 13 — PersistentVolumeClaim: MLflow Tracking Store
+#
+# Stores frequently-written MLflow tracking data:
+#   /app/mlflow.db  — SQLite registry (every model registration/promotion write)
+#   /app/mlruns/    — Experiment run artifacts (metrics, params, artifacts)
+#
+# Needs more IOPS headroom than the models PVC due to continuous tracking writes.
+# Updated on every training run (Phase 18 retraining pipeline).
+#
+# STORAGE CLASS: "standard" — Minikube's built-in hostPath provisioner.
+# Intentional for local Minikube development only (single-node, no HA).
+# In Phase 14+ (EKS), change storageClassName to gp3 (ReadWriteOnce, high IOPS).
+# PVC name and mount paths are stable across phases.
+# ==============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: telco-mlflow-pvc
+  namespace: default
+  labels:
+    app: telco-churn-api
+    tier: mlflow-store
+    phase: "13"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 2Gi

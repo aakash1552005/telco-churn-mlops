@@ -229,3 +229,324 @@ aws ecr delete-repository --repository-name telco-churn-api --force
 | `Docker login did not report 'Login Succeeded'` | ECR auth failure | Check IAM permissions (`AmazonEC2ContainerRegistryFullAccess`) |
 | `Digest verification failed` | Push partially failed or wrong image pushed | Re-run `push_to_ecr.ps1` |
 | `Could not retrieve AWS account ID` | AWS credentials expired/missing | Run `aws sts get-caller-identity` to diagnose |
+
+---
+
+## Phase 13 — Kubernetes Deployment (Minikube)
+
+### Overview
+
+Phase 13 deploys the Telco Churn API to a local Minikube cluster using production-aligned
+Kubernetes manifests. The manifests live in `infra/k8s/` and are designed to carry forward
+intact to EKS (Phase 14+) with minimal changes (storage class, service type, imagePullSecrets).
+
+**Image:** `899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:0595515` (git SHA pinned — not `:latest`)
+
+---
+
+### Manifest Inventory
+
+| File | Purpose |
+|---|---|
+| `configmap.yaml` | Non-secret runtime config (ports, log level, MLflow URI) |
+| `secret.yaml` | **Template only** — placeholder values; real secret injected at deploy time |
+| `pvc-models.yaml` | PVC for model artifacts — read-mostly, 1Gi |
+| `pvc-mlflow.yaml` | PVC for MLflow tracking store — frequently written, 2Gi |
+| `deployment.yaml` | Deployment with startup/liveness/readiness probes, resource limits, rolling update |
+| `service.yaml` | NodePort service → `<minikube-ip>:30800` |
+| `hpa.yaml` | HPA: CPU ≥70% triggers scale-out, min=1 / max=3 replicas |
+| `pdb.yaml` | PodDisruptionBudget: `minAvailable: 1` |
+
+---
+
+### Prerequisites
+
+| Requirement | Verify |
+|---|---|
+| Minikube running | `minikube status` |
+| kubectl configured | `kubectl cluster-info` |
+| AWS CLI configured (for ECR) | `aws sts get-caller-identity` |
+| metrics-server (for HPA) | `minikube addons enable metrics-server` |
+
+---
+
+### Step 1 — ECR Authentication (choose one option)
+
+#### Option A — `minikube image load` ✅ Recommended for local development
+
+**No AWS credentials inside the cluster.** Pull the image to your local Docker daemon,
+then load it directly into Minikube's container runtime. Kubernetes will find the image
+locally without contacting ECR.
+
+```powershell
+# Authenticate Docker with ECR (one-time per session)
+aws ecr get-login-password --region ap-south-1 | `
+  docker login --username AWS --password-stdin `
+  899640267680.dkr.ecr.ap-south-1.amazonaws.com
+
+# Pull the image to local Docker
+docker pull 899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:0595515
+
+# Load into Minikube's container runtime
+minikube image load 899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:0595515
+
+# Verify the image is available inside Minikube
+minikube image ls | findstr telco-churn-api
+```
+
+The Deployment uses `imagePullPolicy: IfNotPresent`, so Kubernetes uses the loaded image
+without attempting an ECR pull. Leave `imagePullSecrets` commented out in `deployment.yaml`.
+
+**Advantages:** No AWS credentials inside the cluster, faster iteration, ideal for development.
+
+---
+
+#### Option B — `kubectl create secret docker-registry` (production-like ECR pull)
+
+Creates a Kubernetes pull secret so the cluster can authenticate with ECR directly.
+This mirrors how EKS authenticates with ECR and is useful for testing the full registry flow.
+
+```powershell
+# Get a fresh ECR login token (tokens expire after 12 hours)
+$ECR_TOKEN = aws ecr get-login-password --region ap-south-1
+
+# Create the pull secret in Kubernetes
+kubectl create secret docker-registry ecr-credentials `
+  --docker-server=899640267680.dkr.ecr.ap-south-1.amazonaws.com `
+  --docker-username=AWS `
+  --docker-password=$ECR_TOKEN `
+  --namespace=default
+
+# Verify secret was created
+kubectl get secret ecr-credentials
+```
+
+Then **uncomment** the `imagePullSecrets` block in `infra/k8s/deployment.yaml`:
+
+```yaml
+# Before deploying, uncomment these lines in deployment.yaml:
+imagePullSecrets:
+  - name: ecr-credentials
+```
+
+> **Token expiry:** ECR tokens expire after 12 hours. If pods fail to pull with `ImagePullBackOff`,
+> delete and recreate the secret using the command above.
+
+**Advantages:** Mirrors EKS authentication, tests real registry pulls end-to-end.
+
+---
+
+### Step 2 — Inject the Real API Secret
+
+The committed `secret.yaml` contains only a placeholder. Before deploying, create the
+real secret so its value never touches the filesystem or git:
+
+```powershell
+# Replace "your-actual-api-key" with a real secret key
+kubectl create secret generic telco-churn-secret `
+  --from-literal=API_SECRET_KEYS='["your-actual-api-key"]' `
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Verify (value is not printed)
+kubectl describe secret telco-churn-secret
+```
+
+---
+
+### Step 3 — Copy Model Artifacts onto the PVCs
+
+The PVCs are initially empty. Before the pod can pass the readiness probe, the model
+artifacts must exist on `telco-models-pvc`. Use a temporary init pod to copy them:
+
+```powershell
+# Apply PVCs first so they are bound
+kubectl apply -f infra/k8s/pvc.yaml
+
+# Copy models/ onto telco-models-pvc
+kubectl run pvc-init --image=busybox --restart=Never `
+  --overrides='{"spec":{"volumes":[{"name":"m","persistentVolumeClaim":{"claimName":"telco-models-pvc"}}],"containers":[{"name":"c","image":"busybox","command":["sh","-c","sleep 3600"],"volumeMounts":[{"name":"m","mountPath":"/mnt"}]}]}}' -- sh -c "sleep 3600"
+
+kubectl wait --for=condition=Ready pod/pvc-init --timeout=60s
+
+# Copy artifacts from local to PVC (adjust path as needed)
+kubectl cp models/. pvc-init:/mnt/
+
+# Verify
+kubectl exec pvc-init -- ls /mnt/
+
+# Cleanup init pod
+kubectl delete pod pvc-init
+
+# Repeat for mlflow PVC (telco-mlflow-pvc → /mnt/mlruns and mlflow.db)
+```
+
+---
+
+### Step 4 — Deploy All Manifests
+
+> [!IMPORTANT]
+> `kubectl apply -f infra/k8s/` applies **all files** in the directory including `secret.yaml`,
+> which contains the placeholder value. If you run `kubectl apply -f infra/k8s/` after already
+> injecting the real secret (Step 2), it will **overwrite** it with the placeholder.
+>
+> Use the explicit per-file approach below, which skips `secret.yaml`:
+
+```powershell
+# Dry-run validation first (validates all manifests including secret template)
+kubectl apply --dry-run=client -f infra/k8s/
+
+# Deploy non-secret resources (excludes secret.yaml to protect the real secret)
+kubectl apply -f infra/k8s/configmap.yaml
+kubectl apply -f infra/k8s/pvc-models.yaml
+kubectl apply -f infra/k8s/pvc-mlflow.yaml
+kubectl apply -f infra/k8s/deployment.yaml
+kubectl apply -f infra/k8s/service.yaml
+kubectl apply -f infra/k8s/hpa.yaml
+kubectl apply -f infra/k8s/pdb.yaml
+
+# Watch rollout completion (stronger than just checking pod state)
+kubectl rollout status deployment/telco-churn-api
+```
+
+> [!NOTE]
+> If you want to use `kubectl apply -f infra/k8s/` (e.g. in CI), inject the real secret
+> **after** that command using `kubectl create secret ... | kubectl apply -f -`.
+> A `kubectl rollout restart deployment/telco-churn-api` is then required to pick up the new value.
+
+---
+
+### Step 5 — Verify Deployment
+
+Run through the full verification checklist in order:
+
+```powershell
+# 1. Rollout completed successfully
+kubectl rollout status deployment/telco-churn-api
+# Expected: "deployment "telco-churn-api" successfully rolled out"
+
+# 2. Pod is Running and 1/1 Ready
+kubectl get pods -l app=telco-churn-api
+# Expected: STATUS=Running, READY=1/1
+
+# 3. Probes passing — no restarts
+kubectl describe pod -l app=telco-churn-api
+# Expected: Liveness/Readiness probe succeeding, RESTART COUNT=0
+
+# 4. Confirm model artifacts are mounted and readable (catches PVC mount issues)
+kubectl exec -it $(kubectl get pod -l app=telco-churn-api -o jsonpath='{.items[0].metadata.name}') `
+  -- ls -la /app/models/
+# Expected: feature_pipeline.joblib, decision_threshold.json, feature_schema.json present
+
+# 5. Check logs for clean startup
+kubectl logs -l app=telco-churn-api --tail=50
+# Expected: "Startup complete: Production model version X ready for inference"
+# No: CrashLoopBackOff, model load errors, repeated restarts
+
+# 6. Expose the service
+minikube service telco-churn-api --url
+# OR: kubectl port-forward svc/telco-churn-api 8000:8000
+
+# 7. Health check (no auth required)
+curl http://<minikube-url>/health/readiness
+# Expected: {"status":"ready","model_loaded":true,...}
+
+# 8. Prediction (requires API key from secret)
+curl -X POST http://<minikube-url>/predict `
+  -H "Content-Type: application/json" `
+  -H "X-API-Key: your-actual-api-key" `
+  -d '{
+    "customerID": "test-001",
+    "gender": "Male",
+    "SeniorCitizen": 0,
+    "Partner": "Yes",
+    "Dependents": "No",
+    "tenure": 12,
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "Fiber optic",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "No",
+    "StreamingMovies": "No",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 70.35,
+    "TotalCharges": "845.5"
+  }'
+# Expected: {"probability":..., "decision":"churn"/"retain", "churn_predicted":true/false,...}
+```
+
+---
+
+### Updating the Image Tag After Each Push
+
+After each `push_to_ecr.ps1` run, update the image tag in `deployment.yaml`:
+
+```powershell
+# Get the latest git SHA
+git rev-parse --short HEAD
+
+# Edit infra/k8s/deployment.yaml — update this line:
+#   image: 899640267680.dkr.ecr.ap-south-1.amazonaws.com/telco-churn-api:<NEW-SHA>
+
+# Re-apply (triggers rolling update)
+kubectl apply -f infra/k8s/deployment.yaml
+kubectl rollout status deployment/telco-churn-api
+```
+
+---
+
+### Design Notes
+
+#### Why hostPath / "standard" StorageClass?
+
+Minikube's `standard` StorageClass uses `hostPath` — data lives on the Minikube VM's
+local filesystem. This is **intentional for local development only**:
+
+- Minikube is a **single-node** cluster. HA, replication, and cross-node scheduling
+  don't apply. Cloud storage classes (`gp2`, `gp3`, `efs`) are unavailable without plugins.
+- Development workflow: model artifacts are copied onto the PVC once; the pod reads them
+  at every startup. MLflow writes experiment runs to the mlflow PVC continuously.
+- **Not production HA storage.** In Phase 14+ (EKS), the `storageClassName` field in
+  `pvc.yaml` changes to the appropriate cloud class (e.g., `gp3`). PVC names and mount
+  paths remain identical — zero changes needed in `deployment.yaml`.
+
+#### Why Two PVCs?
+
+| PVC | Contents | Access Pattern | Future Storage Class |
+|---|---|---|---|
+| `telco-models-pvc` | models/, feature_pipeline.joblib, decision_threshold.json, feature_schema.json | Read-mostly; updated only on model promotion | ReadWriteMany (EFS) for multi-pod serving |
+| `telco-mlflow-pvc` | mlruns/, mlflow.db | Frequently written (every training run, metric log) | ReadWriteOnce (gp3) — high IOPS |
+
+Combining them into one PVC would force both into the same access mode and storage class,
+preventing independent scaling and storage class optimization in later phases.
+
+#### Why NodePort (not LoadBalancer)?
+
+Minikube has no cloud load balancer provisioner. `LoadBalancer` type services stay in
+`Pending` indefinitely on bare Minikube. `NodePort` is immediately functional and
+reachable at `<minikube-ip>:30800`. In EKS, change `type: NodePort` to `type: LoadBalancer`
+or deploy an Ingress controller.
+
+#### Why SHA-pinned Image?
+
+`:latest` is a mutable tag — the same string can point to a different image digest after
+each push. SHA tags are immutable: `telco-churn-api:0595515` will always resolve to the
+exact image that was built from that git commit. This guarantees reproducibility and makes
+rollbacks trivial (`kubectl set image deployment/... image=...:previous-sha`).
+
+---
+
+### Error Reference
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `ImagePullBackOff` | ECR auth missing / token expired | Option A: `minikube image load`; Option B: recreate `ecr-credentials` secret |
+| Pod stuck in `Init:0/1` or CrashLoopBackOff | PVC empty — model artifacts not copied | Run Step 3 (copy models to PVC) |
+| `0/1` Ready, restarts > 0 | Readiness probe failing; MLflow can't open `mlflow.db` | Check `kubectl logs` for model load errors; verify mlflow PVC mount |
+| `kubectl apply` fails with `unknown field` | API version mismatch | Verify K8s cluster version: `kubectl version` |
+| HPA shows `<unknown>/70%` CPU | metrics-server not running | `minikube addons enable metrics-server` |
+| `Error from server: secrets "telco-churn-secret" not found` | Real secret not created | Run Step 2 (`kubectl create secret`) |

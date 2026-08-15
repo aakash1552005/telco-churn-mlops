@@ -1,0 +1,39 @@
+# ==============================================================================
+# Phase 13 — HorizontalPodAutoscaler
+#
+# CPU-based autoscaling for the Telco Churn API deployment.
+#
+# NOTE: On a single Minikube node, autoscaling is a demonstration of
+# configuration correctness rather than meaningful capacity management.
+# The HPA will function, but the node has finite resources so it may
+# not be able to schedule additional pods without resource contention.
+#
+# PREREQUISITE: metrics-server must be enabled:
+#   minikube addons enable metrics-server
+# Verify: kubectl top pods
+#
+# In EKS (Phase 14+), this HPA config carries over unchanged and will
+# scale across multiple worker nodes as intended.
+# ==============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: telco-churn-api
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "13"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: telco-churn-api
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

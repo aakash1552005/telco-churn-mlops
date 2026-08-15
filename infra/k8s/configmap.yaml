@@ -1,0 +1,32 @@
+# ==============================================================================
+# Phase 13 — Kubernetes ConfigMap
+#
+# Non-secret application configuration for the Telco Churn API.
+# RULES:
+#   - Only non-sensitive values belong here.
+#   - Secret values (API_SECRET_KEYS, AWS credentials) go in secret.yaml.
+#   - MLFLOW_TRACKING_URI references the in-pod path to the mounted SQLite db.
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telco-churn-config
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "13"
+data:
+  # Runtime environment
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+
+  # API server binding (container-internal; NodePort/port-forward handles external)
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+
+  # MLflow — points to the SQLite file on the mlflow PVC mount path
+  MLFLOW_TRACKING_URI: "sqlite:////app/mlflow.db"
+  MLFLOW_MODEL_NAME: "telco-churn-classifier"
+
+  # Rate limiting (requests per minute)
+  RATE_LIMIT_PER_MINUTE: "100"

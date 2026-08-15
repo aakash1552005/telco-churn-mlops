@@ -1,0 +1,32 @@
+# ==============================================================================
+# Phase 13 — PersistentVolumeClaim: Model Artifacts
+#
+# Stores read-mostly model artifacts:
+#   /app/models/best_model.joblib
+#   /app/models/feature_pipeline.joblib
+#   /app/models/decision_threshold.json
+#   /app/models/feature_schema.json
+#
+# Updated only when a new model is promoted (Phase 18 retraining).
+#
+# STORAGE CLASS: "standard" — Minikube's built-in hostPath provisioner.
+# Intentional for local Minikube development only (single-node, no HA).
+# In Phase 14+ (EKS), change storageClassName to gp3 / ReadWriteMany (EFS)
+# for multi-pod serving. PVC name and mount paths are stable across phases.
+# ==============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: telco-models-pvc
+  namespace: default
+  labels:
+    app: telco-churn-api
+    tier: model-artifacts
+    phase: "13"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi

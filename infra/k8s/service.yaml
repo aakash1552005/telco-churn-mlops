@@ -1,0 +1,36 @@
+# ==============================================================================
+# Phase 13 — Kubernetes Service
+#
+# NodePort service for local Minikube access.
+#
+# WHY NodePort (not ClusterIP):
+#   - Minikube has no cloud load balancer.
+#   - NodePort exposes the service at <minikube-ip>:30800 — reachable
+#     directly from the host machine without kubectl port-forward.
+#   - `minikube service telco-churn-api` automates browser/URL opening.
+#   - ClusterIP would require `kubectl port-forward` for every session.
+#
+# Access methods (after `kubectl apply -f infra/k8s/`):
+#   Option 1: minikube service telco-churn-api --url
+#   Option 2: kubectl port-forward svc/telco-churn-api 8000:8000
+#
+# In EKS (Phase 14+): change type to LoadBalancer or use an Ingress.
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: telco-churn-api
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "13"
+spec:
+  type: NodePort
+  selector:
+    app: telco-churn-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000        # ClusterIP port (used by kubectl port-forward / other pods)
+      targetPort: 8000  # Container port where uvicorn is listening
+      nodePort: 30800   # Fixed NodePort — predictable, avoids random assignment
