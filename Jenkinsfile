@@ -63,6 +63,7 @@ pipeline {
                 echo '=== Stage 5: Validate Raw Dataset Schema & Integrity ==='
                 sh '''
                     . .venv/bin/activate
+                    python3 tasks.py ingest
                     python3 tasks.py validate
                 '''
             }
