@@ -72,6 +72,24 @@ TELCO_MODEL_INFO = Gauge(
     ["version"],
 )
 
+# 5. Drift Monitoring Metrics (Master Contract Section 10)
+TELCO_DRIFT_SCORE = Gauge(
+    "telco_drift_score",
+    "Evidently AI dataset drift score representing "
+    "share of drifted features in latest window.",
+)
+
+TELCO_DRIFT_DETECTED = Gauge(
+    "telco_drift_detected",
+    "Binary indicator (1.0 if drift detected, "
+    "0.0 otherwise) for latest monitoring window.",
+)
+
+TELCO_DRIFT_CONSECUTIVE_WINDOWS = Gauge(
+    "telco_drift_consecutive_windows",
+    "Number of consecutive monitoring windows where drift conditions were satisfied.",
+)
+
 # Track active version label to clear obsolete gauges on model reload
 _ACTIVE_VERSION_GAUGES: Dict[str, bool] = {}
 
@@ -94,6 +112,27 @@ def update_model_info(version: str) -> None:
     TELCO_MODEL_INFO.labels(version=str(version)).set(1.0)
     _ACTIVE_VERSION_GAUGES[str(version)] = True
     logger.info(f"Prometheus telco_model_info updated to version='{version}'")
+
+
+def update_drift_metrics(
+    score: float,
+    detected: bool,
+    consecutive_windows: int,
+) -> None:
+    """Update Prometheus drift monitoring gauges with latest evaluation results.
+
+    Args:
+        score: Evidently dataset drift score (0.0 to 1.0).
+        detected: Boolean indicating whether Section 10 drift criteria were breached.
+        consecutive_windows: Integer count of consecutive drift monitoring windows.
+    """
+    TELCO_DRIFT_SCORE.set(float(score))
+    TELCO_DRIFT_DETECTED.set(1.0 if detected else 0.0)
+    TELCO_DRIFT_CONSECUTIVE_WINDOWS.set(float(consecutive_windows))
+    logger.info(
+        f"Prometheus drift metrics updated: score={score:.4f}, "
+        f"detected={detected}, consecutive_windows={consecutive_windows}"
+    )
 
 
 def record_prediction_metric(decision: str) -> None:

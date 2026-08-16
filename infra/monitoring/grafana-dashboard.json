@@ -240,18 +240,66 @@
         "y": 0
       },
       "id": 4,
-      "title": "Data & Concept Drift Score",
-      "type": "text",
+      "title": "Evidently Dataset Drift Score",
+      "type": "stat",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus-ds"
       },
       "pluginVersion": "10.4.1",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.15
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
       "options": {
-        "content": "<div style=\"text-align: center; padding: 10px;\">\n  <h3 style=\"color: #F5A623;\">Coming in Phase 17</h3>\n  <p style=\"color: #999;\">Evidently AI Drift Metrics & PSI Telemetry Pipeline</p>\n</div>",
-        "mode": "html"
-      }
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ds"
+          },
+          "editorMode": "code",
+          "expr": "telco_drift_score",
+          "instant": true,
+          "legendFormat": "Drift Score (Share)",
+          "range": false,
+          "refId": "A"
+        }
+      ]
     },
+
     {
       "collapsed": false,
       "gridPos": {

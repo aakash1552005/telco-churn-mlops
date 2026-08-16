@@ -322,6 +322,20 @@ def task_docker_run() -> None:
         print("\nDocker container stopped.")
 
 
+def task_drift() -> None:
+    """Run Evidently AI drift detection and monitoring pipeline."""
+    print("--- Running Evidently AI Drift Detection Pipeline ---")
+    from src.monitoring.drift import run_drift_pipeline
+
+    res = run_drift_pipeline()
+    print("Drift Monitoring Pipeline Completed.")
+    print(f"  Drift Detected: {res['summary']['drift_detected']}")
+    print(f"  Consecutive Drift Windows: {res['summary']['consecutive_drift_windows']}")
+    print(f"  Retraining Triggered: {res['summary']['retraining_triggered']}")
+    if res["summary"]["triggering_criteria"]:
+        print(f"  Triggering Criteria: {res['summary']['triggering_criteria']}")
+
+
 def main() -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
@@ -344,6 +358,7 @@ def main() -> None:
             "serve",
             "docker-build",
             "docker-run",
+            "drift",
         ],
         help="Target task to execute",
     )
@@ -364,6 +379,7 @@ def main() -> None:
         "serve": task_serve,
         "docker-build": task_docker_build,
         "docker-run": task_docker_run,
+        "drift": task_drift,
     }
     tasks[args.target]()
 

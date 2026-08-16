@@ -42,6 +42,9 @@ def test_metrics_endpoint_exposition_format() -> None:
         assert "# TYPE telco_api_errors_total counter" in body
         assert "# TYPE telco_request_duration_seconds histogram" in body
         assert "# TYPE telco_model_info gauge" in body
+        assert "# TYPE telco_drift_score gauge" in body
+        assert "# TYPE telco_drift_detected gauge" in body
+        assert "# TYPE telco_drift_consecutive_windows gauge" in body
 
         # Verify histogram series structure (_bucket, _sum, _count)
         assert "telco_request_duration_seconds_bucket{" in body
@@ -54,6 +57,23 @@ def test_metrics_endpoint_exposition_format() -> None:
             or "python_gc_objects_collected_total" in body
             or "process_resident_memory_bytes" in body
         )
+
+
+def test_drift_metrics_exposed_as_gauge() -> None:
+    """Verify update_drift_metrics updates all drift gauges."""
+    from src.api.metrics import update_drift_metrics
+
+    update_drift_metrics(score=0.1845, detected=True, consecutive_windows=2)
+
+    app = create_app()
+    with TestClient(app) as client:
+        res = client.get("/metrics")
+        assert res.status_code == 200
+        body = res.text
+
+        assert "telco_drift_score 0.1845" in body
+        assert "telco_drift_detected 1.0" in body
+        assert "telco_drift_consecutive_windows 2.0" in body
 
 
 def test_predictions_metric_increments_on_predict(

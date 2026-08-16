@@ -1,0 +1,63 @@
+# ==============================================================================
+# Phase 17 — Drift Detection & Monitoring Scheduled CronJob
+#
+# Runs periodic Evidently AI dataset drift evaluation and PSI calculation.
+# When 3 consecutive drift windows are detected, triggers Jenkins retraining.
+# ==============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telco-drift-monitor
+  namespace: default
+  labels:
+    app: telco-churn-api
+    phase: "17"
+spec:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: telco-drift-monitor
+            phase: "17"
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: drift-monitor
+              image: telco-churn-api:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - "python"
+                - "-m"
+                - "src.monitoring.drift"
+              envFrom:
+                - configMapRef:
+                    name: telco-churn-config
+                - secretRef:
+                    name: telco-churn-secret
+              env:
+                - name: JENKINS_URL
+                  value: "http://jenkins:8080"
+              volumeMounts:
+                - name: models-volume
+                  mountPath: /app/models
+                  readOnly: true
+                - name: mlflow-volume
+                  mountPath: /app/mlruns
+                  subPath: mlruns
+                  readOnly: false
+                - name: mlflow-volume
+                  mountPath: /app/mlflow.db
+                  subPath: mlflow.db
+                  readOnly: false
+          volumes:
+            - name: models-volume
+              persistentVolumeClaim:
+                claimName: telco-models-pvc
+            - name: mlflow-volume
+              persistentVolumeClaim:
+                claimName: telco-mlflow-pvc
