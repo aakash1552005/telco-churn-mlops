@@ -130,6 +130,7 @@ def test_train_candidate_models_tiny_dataset(
         metadata_output_path=out_meta,
         random_state=42,
         n_iter=2,
+        n_jobs=1,
     )
 
     # 1. Check Fitted Estimator Interface Constraints
@@ -183,6 +184,7 @@ def test_train_models_reproducibility(
         metadata_output_path=run1_dir / "meta.json",
         random_state=42,
         n_iter=3,
+        n_jobs=1,
     )
 
     m2, metrics2, meta2 = train_candidate_models(
@@ -194,6 +196,7 @@ def test_train_models_reproducibility(
         metadata_output_path=run2_dir / "meta.json",
         random_state=42,
         n_iter=3,
+        n_jobs=1,
     )
 
     assert meta1["algorithm"] == meta2["algorithm"]

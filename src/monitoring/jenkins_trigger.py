@@ -9,6 +9,7 @@ via environment/secrets, and structured logging.
 import base64
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -118,8 +119,6 @@ def trigger_jenkins_retraining(
 
     # 2. Trigger Build
     if parameters:
-        import urllib.parse
-
         query = urllib.parse.urlencode(parameters)
         build_url = f"{base_url}/job/{job_name}/buildWithParameters?{query}"
     else:

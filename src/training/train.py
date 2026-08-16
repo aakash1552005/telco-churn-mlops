@@ -175,6 +175,7 @@ def train_candidate_models(
     metadata_output_path: Optional[Path] = None,
     random_state: Optional[int] = None,
     n_iter: Optional[int] = None,
+    n_jobs: int = -1,
 ) -> Tuple[BaseEstimator, Dict[str, Any], Dict[str, Any]]:
     """Train candidate models with StratifiedKFold CV and RandomizedSearchCV.
 
@@ -301,7 +302,7 @@ def train_candidate_models(
             scoring=roc_auc_binary_scorer,
             cv=cv,
             random_state=seed,
-            n_jobs=-1,
+            n_jobs=n_jobs,
             refit=True,
         )
         search.fit(X_train, y_train)

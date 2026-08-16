@@ -509,7 +509,7 @@ if __name__ == "__main__":
         window_id=args.window_id,
         trigger_retraining=not args.no_trigger,
     )
-    print(
+    logger.info(
         "Drift Monitoring Completed: "
         f"drift_detected={res['summary']['drift_detected']}, "
         f"consecutive_windows={res['summary']['consecutive_drift_windows']}, "
