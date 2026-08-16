@@ -338,6 +338,7 @@ def run_drift_pipeline(
     output_html_path: Optional[Path] = None,
     trigger_retraining: bool = True,
     settings: Optional[Settings] = None,
+    jenkins_parameters: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Execute the full end-to-end drift monitoring workflow.
 
@@ -428,7 +429,8 @@ def run_drift_pipeline(
         )
         try:
             jenkins_trigger_result = trigger_jenkins_retraining(
-                reason=triggering_reasons
+                reason=triggering_reasons,
+                parameters=jenkins_parameters,
             )
         except Exception as e:
             logger.error(f"Failed to trigger Jenkins retraining pipeline: {e}")

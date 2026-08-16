@@ -230,6 +230,9 @@ def task_promote() -> None:
     print(f"Promotion Reason: {results['reason']}")
     print(f"MLflow Run ID: {results['run_id']}")
     print(f"MLflow Tracking URI: '{settings.MLFLOW_TRACKING_URI}'")
+    if not results["is_promoted"]:
+        print("ERROR: Model candidate failed Section 9 promotion criteria.")
+        sys.exit(1)
 
 
 def task_serve() -> None:

@@ -8,6 +8,7 @@ and persists full data provenance metadata and evaluation reports.
 
 import hashlib
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -241,29 +242,46 @@ def train_candidate_models(
     cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=seed)
 
     # 5. Define Candidate Models & Search Spaces
-    candidates: Dict[str, Dict[str, Any]] = {
-        "LogisticRegression": {
-            "estimator": LogisticRegression(random_state=seed, max_iter=1000),
-            "param_distributions": {
-                "C": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
-                "solver": ["lbfgs"],
+    if os.getenv("FORCE_DEGRADED_CANDIDATE") == "1":
+        logger.warning(
+            "FORCE_DEGRADED_CANDIDATE=1 detected: "
+            "Training degraded candidate model for promotion gate testing."
+        )
+        candidates: Dict[str, Dict[str, Any]] = {
+            "LogisticRegression": {
+                "estimator": LogisticRegression(
+                    random_state=seed, max_iter=5, C=0.0001
+                ),
+                "param_distributions": {"C": [0.0001]},
+                "n_iter": 1,
+            }
+        }
+    else:
+        candidates = {
+            "LogisticRegression": {
+                "estimator": LogisticRegression(random_state=seed, max_iter=1000),
+                "param_distributions": {
+                    "C": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
+                    "solver": ["lbfgs"],
+                },
+                "n_iter": 6,  # 6 combinations total for C grid
             },
-            "n_iter": 6,  # 6 combinations total for C grid
-        },
-        "XGBClassifier": {
-            "estimator": xgb.XGBClassifier(random_state=seed, eval_metric="logloss"),
-            "param_distributions": {
-                "n_estimators": [50, 100, 150, 200, 250, 300],
-                "max_depth": [3, 4, 5, 6, 7, 8],
-                "learning_rate": [0.01, 0.03, 0.05, 0.1, 0.2],
-                "subsample": [0.6, 0.7, 0.8, 0.9, 1.0],
-                "colsample_bytree": [0.6, 0.7, 0.8, 0.9, 1.0],
-                "min_child_weight": [1, 3, 5, 7],
-                "gamma": [0.0, 0.1, 0.2, 0.3],
+            "XGBClassifier": {
+                "estimator": xgb.XGBClassifier(
+                    random_state=seed, eval_metric="logloss"
+                ),
+                "param_distributions": {
+                    "n_estimators": [50, 100, 150, 200, 250, 300],
+                    "max_depth": [3, 4, 5, 6, 7, 8],
+                    "learning_rate": [0.01, 0.03, 0.05, 0.1, 0.2],
+                    "subsample": [0.6, 0.7, 0.8, 0.9, 1.0],
+                    "colsample_bytree": [0.6, 0.7, 0.8, 0.9, 1.0],
+                    "min_child_weight": [1, 3, 5, 7],
+                    "gamma": [0.0, 0.1, 0.2, 0.3],
+                },
+                "n_iter": search_iter,
             },
-            "n_iter": search_iter,
-        },
-    }
+        }
 
     results: Dict[str, Dict[str, Any]] = {}
     cv_results_frames: List[pd.DataFrame] = []

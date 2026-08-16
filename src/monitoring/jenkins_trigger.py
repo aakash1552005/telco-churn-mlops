@@ -56,6 +56,7 @@ def trigger_jenkins_retraining(
     reason: Optional[List[str]] = None,
     jenkins_url: Optional[str] = None,
     auth_credentials: Optional[str] = None,
+    parameters: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Dispatch an authenticated HTTP POST to Jenkins.
 
@@ -66,6 +67,7 @@ def trigger_jenkins_retraining(
         reason: List of triggered drift criteria that provoked the build.
         jenkins_url: Optional override for Jenkins base URL.
         auth_credentials: Optional override for 'username:token' auth string.
+        parameters: Optional dict of job parameters for parameterized builds.
 
     Returns:
         Dictionary containing trigger status, response code, and headers.
@@ -85,13 +87,13 @@ def trigger_jenkins_retraining(
         )
 
     logger.info(
-        f"Initiating Jenkins retraining trigger for job '{job_name}' at '{base_url}'",
-        extra={"job_name": job_name, "reason": reason or []},
+        f"Initiating Jenkins retraining trigger for job '{job_name}' at '{base_url}'"
     )
 
-    auth_b64 = base64.b64encode(auth.encode("utf-8")).decode("utf-8")
+    # Encode HTTP Basic Auth
+    b64_auth = base64.b64encode(auth.encode("utf-8")).decode("utf-8")
     headers: Dict[str, str] = {
-        "Authorization": f"Basic {auth_b64}",
+        "Authorization": f"Basic {b64_auth}",
     }
 
     # 1. Fetch CSRF Crumb
@@ -115,7 +117,14 @@ def trigger_jenkins_retraining(
         )
 
     # 2. Trigger Build
-    build_url = f"{base_url}/job/{job_name}/build"
+    if parameters:
+        import urllib.parse
+
+        query = urllib.parse.urlencode(parameters)
+        build_url = f"{base_url}/job/{job_name}/buildWithParameters?{query}"
+    else:
+        build_url = f"{base_url}/job/{job_name}/build"
+
     try:
         build_req = urllib.request.Request(
             build_url,

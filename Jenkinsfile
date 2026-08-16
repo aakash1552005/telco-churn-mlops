@@ -1,14 +1,19 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'FORCE_DEGRADED_CANDIDATE', defaultValue: '0', description: 'Force degraded model for promotion rejection testing')
+    }
+
     environment {
-        AWS_REGION        = 'ap-south-1'
-        ECR_ACCOUNT_ID    = '899640267680'
-        ECR_REPO_NAME     = 'telco-churn-api'
-        ECR_REGISTRY_URI  = "${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        IMAGE_URI         = "${ECR_REGISTRY_URI}/${ECR_REPO_NAME}"
-        KUBECONFIG        = '/var/jenkins_home/.kube/config'
-        API_KEY           = 'dev-secret-key-12345'
+        AWS_REGION               = 'ap-south-1'
+        ECR_ACCOUNT_ID           = '899640267680'
+        ECR_REPO_NAME            = 'telco-churn-api'
+        ECR_REGISTRY_URI         = "${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_URI                = "${ECR_REGISTRY_URI}/${ECR_REPO_NAME}"
+        KUBECONFIG               = '/var/jenkins_home/.kube/config'
+        API_KEY                  = 'dev-secret-key-123'
+        FORCE_DEGRADED_CANDIDATE = "${params.FORCE_DEGRADED_CANDIDATE ?: '0'}"
     }
 
     stages {
