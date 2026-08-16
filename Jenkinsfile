@@ -21,6 +21,9 @@ pipeline {
             steps {
                 echo '=== Stage 1: Checkout Source Code ==='
                 checkout scm
+                sh '''
+                    chmod -R u+rw . || true
+                '''
                 script {
                     env.GIT_COMMIT_SHORT = sh(
                         script: 'git rev-parse --short HEAD',
