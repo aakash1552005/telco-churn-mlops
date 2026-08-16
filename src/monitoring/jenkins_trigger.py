@@ -14,6 +14,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.core.config import get_settings
 from src.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -24,12 +25,17 @@ def get_jenkins_auth() -> Optional[str]:
 
     Priority:
         1. JENKINS_AUTH environment variable (format: 'admin:token')
-        2. JENKINS_USER and JENKINS_API_TOKEN environment variables
-        3. /var/jenkins_home/cli_token.txt if running
+        2. Settings.JENKINS_AUTH
+        3. JENKINS_USER and JENKINS_API_TOKEN environment variables
+        4. /var/jenkins_home/cli_token.txt if running
            inside/adjacent to Jenkins container
     """
-    if "JENKINS_AUTH" in os.environ:
+    if "JENKINS_AUTH" in os.environ and os.environ["JENKINS_AUTH"]:
         return os.environ["JENKINS_AUTH"]
+
+    cfg_auth = get_settings().JENKINS_AUTH
+    if cfg_auth and cfg_auth.strip():
+        return cfg_auth
 
     user = os.getenv("JENKINS_USER")
     token = os.getenv("JENKINS_API_TOKEN")
@@ -48,12 +54,16 @@ def get_jenkins_auth() -> Optional[str]:
 
 
 def get_jenkins_base_url() -> str:
-    """Retrieve Jenkins Base URL from environment, defaulting to standard local port."""
-    return os.getenv("JENKINS_URL", "http://localhost:8080").rstrip("/")
+    """Retrieve Jenkins Base URL from settings or environment."""
+    return (
+        os.getenv("JENKINS_URL")
+        or get_settings().JENKINS_URL
+        or "http://localhost:8081"
+    ).rstrip("/")
 
 
 def trigger_jenkins_retraining(
-    job_name: str = "telco-churn-pipeline",
+    job_name: Optional[str] = None,
     reason: Optional[List[str]] = None,
     jenkins_url: Optional[str] = None,
     auth_credentials: Optional[str] = None,
@@ -76,6 +86,7 @@ def trigger_jenkins_retraining(
     Raises:
         RuntimeError: If authentication is missing or Jenkins API call fails.
     """
+    target_job = job_name or get_settings().JENKINS_JOB_NAME
     base_url = jenkins_url or get_jenkins_base_url()
     auth = auth_credentials if auth_credentials is not None else get_jenkins_auth()
 
@@ -88,7 +99,7 @@ def trigger_jenkins_retraining(
         )
 
     logger.info(
-        f"Initiating Jenkins retraining trigger for job '{job_name}' at '{base_url}'"
+        f"Initiating Jenkins retraining trigger for job '{target_job}' at '{base_url}'"
     )
 
     # Encode HTTP Basic Auth
@@ -120,9 +131,9 @@ def trigger_jenkins_retraining(
     # 2. Trigger Build
     if parameters:
         query = urllib.parse.urlencode(parameters)
-        build_url = f"{base_url}/job/{job_name}/buildWithParameters?{query}"
+        build_url = f"{base_url}/job/{target_job}/buildWithParameters?{query}"
     else:
-        build_url = f"{base_url}/job/{job_name}/build"
+        build_url = f"{base_url}/job/{target_job}/build"
 
     try:
         build_req = urllib.request.Request(
@@ -136,9 +147,9 @@ def trigger_jenkins_retraining(
             queue_location = resp.headers.get("Location", "")
             logger.info(
                 f"Successfully triggered Jenkins build "
-                f"for '{job_name}'. HTTP status: {status_code}",
+                f"for '{target_job}'. HTTP status: {status_code}",
                 extra={
-                    "job_name": job_name,
+                    "job_name": target_job,
                     "status_code": status_code,
                     "queue_location": queue_location,
                 },
@@ -146,7 +157,7 @@ def trigger_jenkins_retraining(
             return {
                 "status": "success",
                 "status_code": status_code,
-                "job_name": job_name,
+                "job_name": target_job,
                 "queue_location": queue_location,
                 "reason": reason or [],
             }

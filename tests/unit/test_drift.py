@@ -299,6 +299,7 @@ def test_run_drift_pipeline_unshifted(tmp_path: Path) -> None:
         window_id="win-unshifted",
         state_file_path=state_file,
         output_report_path=report_file,
+        model_path=tmp_path / "dummy.joblib",
         trigger_retraining=False,
     )
 
@@ -340,6 +341,7 @@ def test_run_drift_pipeline_shifted(tmp_path: Path) -> None:
         window_id="win-shifted",
         state_file_path=state_file,
         output_report_path=report_file,
+        model_path=tmp_path / "dummy.joblib",
         trigger_retraining=False,
     )
 

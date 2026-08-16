@@ -339,6 +339,7 @@ def run_drift_pipeline(
     trigger_retraining: bool = True,
     settings: Optional[Settings] = None,
     jenkins_parameters: Optional[Dict[str, Any]] = None,
+    model_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Execute the full end-to-end drift monitoring workflow.
 
@@ -384,7 +385,9 @@ def run_drift_pipeline(
     )
 
     # 3. Compute Prediction Confidence
-    mean_conf, _ = calculate_prediction_confidence(curr_df, features=features)
+    mean_conf, _ = calculate_prediction_confidence(
+        curr_df, model_path=model_path, features=features
+    )
 
     # 4. Evaluate Section 10 Drift Criteria
     is_drift, criteria_summary, triggering_reasons = evaluate_drift_criteria(

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
 
     model_config = SettingsConfigDict(
-        env_file=(".env", ".env.example"),
+        env_file=(".env.example", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
@@ -172,6 +172,11 @@ class Settings(BaseSettings):
     DRIFT_EVIDENTLY_SCORE_THRESHOLD: float = 0.15
     DRIFT_CONFIDENCE_THRESHOLD: float = 0.75
     DRIFT_CONSECUTIVE_WINDOWS: int = 3
+
+    # Jenkins Automation Server Settings (Section 10 & 14)
+    JENKINS_URL: str = "http://localhost:8081"
+    JENKINS_AUTH: Optional[str] = None
+    JENKINS_JOB_NAME: str = "telco-churn-pipeline"
 
 
 _settings: Optional[Settings] = None
