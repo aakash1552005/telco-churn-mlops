@@ -35,9 +35,10 @@ pipeline {
             steps {
                 echo '=== Stage 2: Install Python Virtual Environment & Dependencies ==='
                 sh '''
-                    python3 -m venv .venv
+                    if [ ! -f .venv/bin/activate ]; then
+                        python3 -m venv .venv
+                    fi
                     . .venv/bin/activate
-                    pip install --upgrade pip
                     pip install -e ".[dev,test]"
                 '''
             }
