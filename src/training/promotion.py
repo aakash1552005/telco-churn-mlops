@@ -368,39 +368,47 @@ def promote_model(
 
     if latest_prod_versions:
         prod_ver = latest_prod_versions[0]
-        # Retrieve incumbent metrics from version tags or run metrics
-        try:
-            prod_run = m_client.get_run(prod_ver.run_id)
+        tags = prod_ver.tags or {}
+        if "optimal_f1" in tags and tags.get("optimal_f1"):
             incumbent_metrics = {
                 "optimal_threshold_metrics": {
-                    "f1": prod_run.data.metrics.get(
-                        "test_f1_optimal",
-                        prod_run.data.metrics.get("test_f1_default_0_5", 0.0),
-                    ),
-                    "precision": prod_run.data.metrics.get(
-                        "test_precision_optimal",
-                        prod_run.data.metrics.get("test_precision_default_0_5", 0.0),
-                    ),
-                    "recall": prod_run.data.metrics.get(
-                        "test_recall_optimal",
-                        prod_run.data.metrics.get("test_recall_default_0_5", 0.0),
-                    ),
+                    "f1": float(tags.get("optimal_f1", 0.0)),
+                    "precision": float(tags.get("optimal_precision", 0.0)),
+                    "recall": float(tags.get("optimal_recall", 0.0)),
                 }
             }
             logger.info(
-                f"Retrieved incumbent Production model (v{prod_ver.version}) metrics."
+                f"Retrieved incumbent Production model (v{prod_ver.version}) "
+                "benchmark metrics from version tags."
             )
-        except Exception as e:
-            logger.warning(f"Could not load Production run metrics: {e}. Using tags.")
-            tags = prod_ver.tags or {}
-            if "optimal_f1" in tags:
+        else:
+            # Retrieve incumbent metrics from version tags or run metrics
+            try:
+                prod_run = m_client.get_run(prod_ver.run_id)
                 incumbent_metrics = {
                     "optimal_threshold_metrics": {
-                        "f1": float(tags.get("optimal_f1", 0.0)),
-                        "precision": float(tags.get("optimal_precision", 0.0)),
-                        "recall": float(tags.get("optimal_recall", 0.0)),
+                        "f1": prod_run.data.metrics.get(
+                            "test_f1_optimal",
+                            prod_run.data.metrics.get("test_f1_default_0_5", 0.0),
+                        ),
+                        "precision": prod_run.data.metrics.get(
+                            "test_precision_optimal",
+                            prod_run.data.metrics.get(
+                                "test_precision_default_0_5", 0.0
+                            ),
+                        ),
+                        "recall": prod_run.data.metrics.get(
+                            "test_recall_optimal",
+                            prod_run.data.metrics.get("test_recall_default_0_5", 0.0),
+                        ),
                     }
                 }
+                logger.info(
+                    f"Retrieved incumbent Production model (v{prod_ver.version}) "
+                    "metrics from run."
+                )
+            except Exception as e:
+                logger.warning(f"Could not load Production run metrics: {e}.")
 
     # 4. Compare Candidate against Incumbent
     promotion_result = compare_candidate_to_incumbent(
