@@ -1,0 +1,22 @@
+# ==============================================================================
+# Phase 19 — End-to-End Integration Test Docker Compose Specification
+#
+# ARCHITECTURAL ISOLATION CONTRACT:
+# - Completely standalone test execution environment.
+# - Zero dependency on AWS, ECR, Kubernetes, Minikube, or live Jenkins.
+# - Isolated MLflow SQLite tracking store and model registry.
+# - Real Phase 1-9 code paths, FastAPI serving, and drift detection.
+# ==============================================================================
+
+services:
+  integration-test:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.integration
+    container_name: telco-churn-integration-runner
+    environment:
+      - ENVIRONMENT=testing
+      - API_KEY=dev-secret-key-123
+      - API_SECRET_KEYS=["dev-secret-key-123"]
+      - PYTHONUNBUFFERED=1
+    command: pytest tests/integration/test_end_to_end.py -v

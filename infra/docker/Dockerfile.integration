@@ -1,0 +1,31 @@
+# ==============================================================================
+# Phase 19 — Integration Test Runner Image
+# ==============================================================================
+
+FROM python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files first
+COPY pyproject.toml /app/pyproject.toml
+COPY src/ /app/src/
+COPY tests/ /app/tests/
+COPY data/raw/ /app/data/raw/
+COPY models/ /app/models/
+
+# Install application and test dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir ".[dev,test]"
+
+CMD ["pytest", "tests/integration/test_end_to_end.py", "-v"]

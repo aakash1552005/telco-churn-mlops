@@ -37,6 +37,7 @@ class PredictionService:
         self.loaded_at: str = ""
         self.provenance: Dict[str, Any] = {}
         self.expected_features: list[str] = []
+        self.schema_path: Optional[Path] = None
 
     def load_production_model(
         self,
@@ -221,6 +222,7 @@ class PredictionService:
         self.optimal_threshold = opt_threshold
 
         # 6. Load Feature Schema expected column order
+        self.schema_path = sch_path
         if sch_path.exists():
             with open(sch_path, "r", encoding="utf-8") as f:
                 sch_data = json.load(f)
@@ -294,7 +296,7 @@ class PredictionService:
         # 3. Validate against models/feature_schema.json (Reuse Phase 7's function)
         validate_feature_schema(
             X_proc_df,
-            schema_path=Path(get_settings().FEATURE_SCHEMA_PATH),
+            schema_path=self.schema_path or Path(get_settings().FEATURE_SCHEMA_PATH),
             log_success=False,
         )
 

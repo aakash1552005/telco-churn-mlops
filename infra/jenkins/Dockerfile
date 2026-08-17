@@ -40,11 +40,14 @@ RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "aw
     && ./aws/install \
     && rm -rf awscliv2.zip aws
 
-# Install official static Docker CLI binary
+# Install official static Docker CLI binary & compose plugin
 RUN curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz" | tar -xz -C /tmp \
     && cp /tmp/docker/docker /usr/local/bin/docker \
     && rm -rf /tmp/docker \
-    && chmod +x /usr/local/bin/docker
+    && chmod +x /usr/local/bin/docker \
+    && mkdir -p /usr/local/lib/docker/cli-plugins \
+    && curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose "https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64" \
+    && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Configure standard docker group and add jenkins user (NO sudo / NO root group)
 RUN groupadd -g 999 docker 2>/dev/null || groupadd docker 2>/dev/null || true \

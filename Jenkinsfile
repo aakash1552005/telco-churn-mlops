@@ -67,6 +67,16 @@ pipeline {
             }
         }
 
+        stage('Integration Test') {
+            steps {
+                echo '=== Stage 4.5: Run End-to-End Integration Suite in Isolated Environment ==='
+                sh '''
+                    . .venv/bin/activate
+                    python3 tasks.py integration-test
+                '''
+            }
+        }
+
         stage('Data Validation') {
             steps {
                 echo '=== Stage 5: Validate Raw Dataset Schema & Integrity ==='

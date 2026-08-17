@@ -91,6 +91,20 @@ def task_test() -> None:
         sys.exit(res.returncode)
 
 
+def task_integration_test() -> None:
+    """Run end-to-end integration test suite in isolated environment."""
+    print("--- Running End-to-End Integration Test Suite ---")
+    run_cmd(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/integration/test_end_to_end.py",
+            "-v",
+        ]
+    )
+
+
 def task_clean() -> None:
     """Remove cache files and build artifacts."""
     for pattern in ["__pycache__", ".pytest_cache", ".mypy_cache", ".coverage"]:
@@ -351,6 +365,7 @@ def main() -> None:
             "lint",
             "format",
             "test",
+            "integration-test",
             "clean",
             "ingest",
             "validate",
@@ -372,6 +387,7 @@ def main() -> None:
         "lint": task_lint,
         "format": task_format,
         "test": task_test,
+        "integration-test": task_integration_test,
         "clean": task_clean,
         "ingest": task_ingest,
         "validate": task_validate,

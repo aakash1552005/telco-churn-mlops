@@ -307,6 +307,8 @@ def promote_model(
     experiment_name: Optional[str] = None,
     model_name: Optional[str] = None,
     eval_report_path: Optional[Path] = None,
+    model_path: Optional[Path] = None,
+    policy_path: Optional[Path] = None,
     client: Optional[MlflowClient] = None,
 ) -> Dict[str, Any]:
     """Orchestrate MLflow model registration and promotion policy evaluation.
@@ -316,6 +318,8 @@ def promote_model(
         experiment_name: Optional MLflow experiment name override.
         model_name: Optional registered model name override.
         eval_report_path: Optional path to evaluation_metrics.json artifact.
+        model_path: Optional path to serialized best_model.joblib artifact.
+        policy_path: Optional path to promotion_policy.json.
         client: Optional pre-configured MlflowClient instance.
 
     Returns:
@@ -326,6 +330,8 @@ def promote_model(
     exp_name = experiment_name or settings.MLFLOW_EXPERIMENT_NAME
     m_name = model_name or settings.MLFLOW_MODEL_NAME
     e_path = eval_report_path or Path(settings.EVALUATION_METRICS_PATH)
+    m_path = model_path or Path(settings.MODEL_OUTPUT_PATH)
+    p_path = policy_path or Path(settings.PROMOTION_POLICY_PATH)
 
     # Use passed client or instantiate new MlflowClient against tracking URI
     m_client = client or MlflowClient(tracking_uri=t_uri)
@@ -344,8 +350,6 @@ def promote_model(
     )
 
     # 2. Register Candidate Model in Model Registry
-    model_path = Path(settings.MODEL_OUTPUT_PATH)
-
     try:
         m_client.create_registered_model(m_name)
         logger.info(f"Created registered model '{m_name}' in MLflow Registry.")
@@ -355,7 +359,7 @@ def promote_model(
 
     model_version = m_client.create_model_version(
         name=m_name,
-        source=str(model_path.resolve()),
+        source=str(m_path.resolve()),
         run_id=parent_run_id,
         description=f"Model candidate from run {parent_run_id}",
     )
@@ -411,8 +415,9 @@ def promote_model(
                 logger.warning(f"Could not load Production run metrics: {e}.")
 
     # 4. Compare Candidate against Incumbent
+    active_policy = load_promotion_policy(p_path) if p_path.exists() else None
     promotion_result = compare_candidate_to_incumbent(
-        candidate_metrics, incumbent_metrics=incumbent_metrics
+        candidate_metrics, incumbent_metrics=incumbent_metrics, policy=active_policy
     )
     is_promoted = promotion_result["is_promoted"]
     reason = promotion_result["reason"]

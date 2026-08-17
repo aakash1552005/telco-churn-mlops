@@ -264,10 +264,11 @@ def test_reload_roundtrip(tmp_path: Path) -> None:
     use Version 2.
     """
     test_db = tmp_path / "test_mlflow.db"
-    t_uri = f"sqlite:///{test_db.resolve()}"
+    t_uri = f"sqlite:///{test_db.as_posix()}"
     m_name = "test-churn-model"
 
     mlflow.set_tracking_uri(t_uri)
+    mlflow.set_experiment("reload-experiment")
     m_client = MlflowClient(tracking_uri=t_uri)
 
     pipe_path = Path(settings.FEATURE_PIPELINE_PATH)
@@ -346,10 +347,11 @@ def test_defensive_startup_failures(tmp_path: Path) -> None:
     3. Provenance feature_pipeline_sha256 mismatch -> RuntimeError (Item 2)
     """
     test_db = tmp_path / "defensive_mlflow.db"
-    t_uri = f"sqlite:///{test_db.resolve()}"
+    t_uri = f"sqlite:///{test_db.as_posix()}"
     m_name = "defensive-model"
 
     mlflow.set_tracking_uri(t_uri)
+    mlflow.set_experiment("defensive-experiment")
     m_client = MlflowClient(tracking_uri=t_uri)
     m_client.create_registered_model(m_name)
 
