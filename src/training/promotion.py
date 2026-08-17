@@ -90,13 +90,15 @@ def compare_candidate_to_incumbent(
         }
 
     # Extract optimal threshold metrics per Phase 8 standard
-    c_opt = candidate_metrics.get(
-        "optimal_threshold_metrics",
-        candidate_metrics.get("metrics_at_threshold_0_5", {}),
+    c_opt = (
+        candidate_metrics.get("optimal_threshold_metrics")
+        or candidate_metrics.get("metrics_at_threshold_0_5")
+        or {}
     )
-    i_opt = incumbent_metrics.get(
-        "optimal_threshold_metrics",
-        incumbent_metrics.get("metrics_at_threshold_0_5", {}),
+    i_opt = (
+        incumbent_metrics.get("optimal_threshold_metrics")
+        or incumbent_metrics.get("metrics_at_threshold_0_5")
+        or {}
     )
 
     c_f1 = float(c_opt.get("f1", 0.0))
