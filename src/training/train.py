@@ -169,6 +169,7 @@ def roc_auc_binary_scorer(estimator: Any, X: Any, y: Any) -> float:
 def train_candidate_models(
     processed_dir: Optional[Path] = None,
     schema_path: Optional[Path] = None,
+    pipeline_path: Optional[Path] = None,
     model_output_path: Optional[Path] = None,
     metrics_output_path: Optional[Path] = None,
     cv_results_output_path: Optional[Path] = None,
@@ -182,6 +183,7 @@ def train_candidate_models(
     Args:
         processed_dir: Path to processed train/test datasets directory.
         schema_path: Path to models/feature_schema.json artifact.
+        pipeline_path: Path to serialized feature pipeline artifact.
         model_output_path: Path to output serialized best model.
         metrics_output_path: Path to output training_metrics.json.
         cv_results_output_path: Path to output cv_results.csv.
@@ -195,6 +197,7 @@ def train_candidate_models(
     settings = get_settings()
     data_dir = processed_dir or Path(settings.PROCESSED_DATA_DIR)
     sch_path = schema_path or Path(settings.FEATURE_SCHEMA_PATH)
+    pipe_path = pipeline_path or Path(settings.FEATURE_PIPELINE_PATH)
     out_model_path = model_output_path or Path(settings.MODEL_OUTPUT_PATH)
     out_metrics_path = metrics_output_path or Path(settings.TRAINING_METRICS_PATH)
     out_cv_path = cv_results_output_path or Path(settings.CV_RESULTS_PATH)
@@ -406,9 +409,7 @@ def train_candidate_models(
     # Artifact 4: models/training_metadata.json (Full Provenance Chain)
     raw_path = Path(settings.RAW_DATA_PATH)
     dataset_sha256 = calculate_file_sha256(raw_path)
-    feature_pipeline_sha256 = calculate_file_sha256(
-        Path(settings.FEATURE_PIPELINE_PATH)
-    )
+    feature_pipeline_sha256 = calculate_file_sha256(pipe_path)
 
     schema_config = load_schema_config(Path(settings.SCHEMA_FILE_PATH))
     schema_version = schema_config.get("schema_version", "1.0.0")

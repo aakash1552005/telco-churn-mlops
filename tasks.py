@@ -28,7 +28,7 @@ def task_install() -> None:
     if not git_dir.exists():
         print("Initializing git repository...")
         run_cmd(["git", "init"])
-    run_cmd(["pre-commit", "install"])
+    run_cmd([sys.executable, "-m", "pre_commit", "install"])
 
 
 def check_no_print() -> None:

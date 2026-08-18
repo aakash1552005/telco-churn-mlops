@@ -54,6 +54,10 @@ spec:
                   mountPath: /app/mlflow.db
                   subPath: mlflow.db
                   readOnly: false
+                - name: mlflow-volume
+                  mountPath: /app/reports
+                  subPath: reports
+                  readOnly: false
           volumes:
             - name: models-volume
               persistentVolumeClaim:

@@ -154,6 +154,7 @@ def test_end_to_end_pipeline_integration(
     winning_estimator, train_metrics, train_meta = train_candidate_models(
         processed_dir=ws["processed_dir"],
         schema_path=ws["feature_schema"],
+        pipeline_path=ws["feature_pipeline"],
         model_output_path=ws["best_model"],
         metrics_output_path=ws["training_metrics"],
         cv_results_output_path=ws["cv_results"],
