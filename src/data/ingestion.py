@@ -96,8 +96,13 @@ def ingest_raw_data(
     dst_path.parent.mkdir(parents=True, exist_ok=True)
 
     if src_type == "url":
+        parsed = urllib.parse.urlparse(src_loc)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Unsupported URL scheme '{parsed.scheme}'. Only http/https permitted."
+            )
         req = urllib.request.Request(src_loc, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req) as response:  # nosec: B310
             content = response.read()
             if not content:
                 raise ValueError(f"Downloaded content from URL '{src_loc}' is empty.")

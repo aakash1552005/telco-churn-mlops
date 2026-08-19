@@ -114,8 +114,13 @@ def trigger_jenkins_retraining(
     )
 
     try:
+        parsed_crumb = urllib.parse.urlparse(crumb_url)
+        if parsed_crumb.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Invalid Jenkins crumb URL scheme: '{parsed_crumb.scheme}'"
+            )
         crumb_req = urllib.request.Request(crumb_url, headers=headers)
-        with urllib.request.urlopen(crumb_req, timeout=10) as resp:
+        with urllib.request.urlopen(crumb_req, timeout=10) as resp:  # nosec: B310
             crumb_text = resp.read().decode("utf-8").strip()
             if ":" in crumb_text:
                 parts = crumb_text.split(":", 1)
@@ -136,13 +141,18 @@ def trigger_jenkins_retraining(
         build_url = f"{base_url}/job/{target_job}/build"
 
     try:
+        parsed_build = urllib.parse.urlparse(build_url)
+        if parsed_build.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Invalid Jenkins build URL scheme: '{parsed_build.scheme}'"
+            )
         build_req = urllib.request.Request(
             build_url,
             data=b"",
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(build_req, timeout=15) as resp:
+        with urllib.request.urlopen(build_req, timeout=15) as resp:  # nosec: B310
             status_code = resp.status
             queue_location = resp.headers.get("Location", "")
             logger.info(

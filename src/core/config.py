@@ -134,7 +134,7 @@ class Settings(BaseSettings):
     )
 
     # API & Security Settings (Section 11)
-    API_HOST: str = "0.0.0.0"
+    API_HOST: str = "0.0.0.0"  # nosec: B104
     API_PORT: int = 8000
     API_SECRET_KEYS: List[str] = Field(default_factory=lambda: ["dev-secret-key-123"])
     RATE_LIMIT_PER_MINUTE: str = "60/minute"
