@@ -926,15 +926,15 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 
 **Aakash S. S.**
 - **Degree**: B.Tech in Artificial Intelligence & Data Science
-- **Core Focus**: Machine Learning Operations (MLOps), Production ML Engineering, Distributed Systems, Cloud Architecture & Observability
 - **GitHub**: [@aakash1552005](https://github.com/aakash1552005)
+- **Gmail**: [aakash1552005@gmail.com]
+
 
 ---
 
 ## 39. License
 
-*License not yet specified.*
-For inquiries regarding reuse or collaboration, please open an issue on GitHub.
+**MIT LICENSE**
 
 ---
 
