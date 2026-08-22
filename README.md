@@ -389,16 +389,16 @@ The following metrics represent the **verified historical results** recorded dur
 ### Verified Model Evaluation Visualizations:
 
 <p align="center">
-  <img src="reports/plots/confusion_matrix.png" alt="Confusion Matrix" width="48%" />
-  <img src="reports/plots/roc_curve.png" alt="ROC Curve" width="48%" />
+  <img src="docs/images/confusion_matrix.png" alt="Confusion Matrix" width="48%" />
+  <img src="docs/images/roc_curve.png" alt="ROC Curve" width="48%" />
 </p>
 
 - **Left (Confusion Matrix)**: Shows how the optimal threshold ($0.2872$) shifts classification sensitivity to capture **79.68%** of actual churners (298 True Positives vs. only 76 False Negatives), drastically mitigating high-cost customer loss.
 - **Right (ROC Curve)**: Demonstrates strong discriminative capability across all decision boundaries with an Area Under Curve (AUC) of **0.8471** on the held-out test set.
 
 <p align="center">
-  <img src="reports/plots/precision_recall_curve.png" alt="Precision-Recall Curve" width="48%" />
-  <img src="reports/plots/feature_importance.png" alt="Feature Importance" width="48%" />
+  <img src="docs/images/precision_recall_curve.png" alt="Precision-Recall Curve" width="48%" />
+  <img src="docs/images/feature_importance.png" alt="Feature Importance" width="48%" />
 </p>
 
 - **Left (Precision-Recall Curve)**: Illustrates the trade-off between precision and recall, identifying the optimal operating point along the curve where the composite F1 score reaches its maximum ($0.6395$).
