@@ -13,6 +13,7 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Telemetry-E6522C?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![AWS ECR](https://img.shields.io/badge/AWS-ECR-FF9900?style=flat&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/ecr/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type Checked: mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
 [![Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/)
@@ -384,6 +385,24 @@ The following metrics represent the **verified historical results** recorded dur
 | **Recall (Churn Caught)** | **48.13%** | **79.68%** |
 | **Precision** | **69.50%** | **53.41%** |
 | **F1 Score** | **0.5687** | **0.6395** |
+
+### Verified Model Evaluation Visualizations:
+
+<p align="center">
+  <img src="reports/plots/confusion_matrix.png" alt="Confusion Matrix" width="48%" />
+  <img src="reports/plots/roc_curve.png" alt="ROC Curve" width="48%" />
+</p>
+
+- **Left (Confusion Matrix)**: Shows how the optimal threshold ($0.2872$) shifts classification sensitivity to capture **79.68%** of actual churners (298 True Positives vs. only 76 False Negatives), drastically mitigating high-cost customer loss.
+- **Right (ROC Curve)**: Demonstrates strong discriminative capability across all decision boundaries with an Area Under Curve (AUC) of **0.8471** on the held-out test set.
+
+<p align="center">
+  <img src="reports/plots/precision_recall_curve.png" alt="Precision-Recall Curve" width="48%" />
+  <img src="reports/plots/feature_importance.png" alt="Feature Importance" width="48%" />
+</p>
+
+- **Left (Precision-Recall Curve)**: Illustrates the trade-off between precision and recall, identifying the optimal operating point along the curve where the composite F1 score reaches its maximum ($0.6395$).
+- **Right (Feature Importance)**: Ranks key customer churn drivers, highlighting that contract type (`Month-to-month`), `tenure`, `MonthlyCharges`, and `InternetService` have the strongest predictive weight in identifying at-risk customers.
 
 ---
 
@@ -925,16 +944,14 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 ## 38. Author
 
 **Aakash S. S.**
-- **Degree**: B.Tech in Artificial Intelligence & Data Science
+- **Email**: [aakash1552005@gmail.com](mailto:aakash1552005@gmail.com)
 - **GitHub**: [@aakash1552005](https://github.com/aakash1552005)
-- **Gmail**: [aakash1552005@gmail.com]
-
 
 ---
 
 ## 39. License
 
-**MIT LICENSE**
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
