@@ -136,70 +136,55 @@ The solution consists of seven interconnected software subsystems:
 
 ```mermaid
 flowchart TD
-    classDef dev fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-    classDef cicd fill:#fff3e0,stroke:#f57c00,stroke-width:2px;
-    classDef ml fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
-    classDef cloud fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
-    classDef k8s fill:#ede7f6,stroke:#512da8,stroke-width:2px;
-    classDef obs fill:#fce4ec,stroke:#c2185b,stroke-width:2px;
+    %% Global styling with high-contrast borders
+    classDef main fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef gate fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fbbf24;
+    classDef store fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#e0e7ff;
+    classDef ext fill:#14532d,stroke:#4ade80,stroke-width:2px,color:#dcfce7;
 
-    subgraph DevSpace ["1. Developer & Source Control"]
-        DEV["Developer Workstation"] -->|git push| GITHUB["GitHub Repository"]
+    DEV["Developer / Git Repo"] -->|Push Event| JENKINS["Jenkins CI/CD Pipeline\n(Docker LTS Engine)"]
+
+    subgraph ML_Lifecycle ["Automated ML Lifecycle"]
+        JENKINS --> INGEST["1. Data Ingestion & DVC Lineage"]
+        INGEST --> VALID["2. Schema & Anomaly Validation"]
+        VALID --> FEAT["3. Feature Pipeline (49 Features)"]
+        FEAT --> TRAIN["4. Deterministic Training (5-Fold CV)"]
+        TRAIN --> EVAL["5. Evaluation & Threshold Sweep"]
+        EVAL --> GATE{"Section 9\nPromotion Gate"}
+        GATE -->|Pass: F1 gain >= 1%| PROMOTE["Promote to Production"]
+        GATE -.->|Fail: Retain Incumbent| REJECT["Reject Candidate"]
     end
-    class DevSpace dev;
+    class INGEST,VALID,FEAT,TRAIN,EVAL,PROMOTE main;
+    class GATE gate;
+    class REJECT main;
 
-    subgraph CI_Engine ["2. Jenkins Automation Server (Docker)"]
-        JENKINS["Jenkins CI/CD Pipeline\n(Declarative Jenkinsfile)"]
-        LINT_TEST["Quality Gates:\nLint, Unit Tests (88), Integration Test"]
-        BUILD_IMG["Docker Multi-Stage Build\n& Git-SHA Tagging"]
-        JENKINS --> LINT_TEST
+    subgraph Governance ["Model & Image Governance"]
+        PROMOTE --> MLFLOW[("MLflow Registry\n(sqlite:///mlflow.db)")]
+        PROMOTE --> DOCKER["Docker Multi-Stage Build\n(Non-root UID 10001)"]
+        DOCKER --> ECR[("AWS Elastic Container Registry\n(telco-churn-api)")]
     end
-    class CI_Engine cicd;
+    class MLFLOW,ECR store;
+    class DOCKER main;
 
-    subgraph ML_Lifecycle ["3. Machine Learning Pipeline"]
-        INGEST["Data Ingestion\n(SHA-256 + DVC)"]
-        VALID["Data Validation\n(Pydantic & Schema Rules)"]
-        FEAT["Feature Engineering\n(ColumnTransformer, 49 Features)"]
-        TRAIN["Model Training\n(5-Fold Stratified CV, XGBoost)"]
-        EVAL["Model Evaluation\n(Threshold Tuning & Calibration)"]
-        PROMOTE{"Promotion Gate\n(Section 9 Policy)"}
-        MLFLOW[("MLflow Model Registry\nsqlite:///mlflow.db\nStaging / Production")]
-
-        LINT_TEST --> INGEST --> VALID --> FEAT --> TRAIN --> EVAL --> PROMOTE
-        TRAIN -.-> MLFLOW
-        EVAL -.-> MLFLOW
-        PROMOTE -->|Promote to Production| MLFLOW
-        PROMOTE -->|Accept| BUILD_IMG
-        PROMOTE -.->|Reject: Keep Incumbent| MLFLOW
+    subgraph Cluster ["Minikube Kubernetes Cluster"]
+        ECR --> K8S_DEPLOY["Kubernetes Deployment\n(Rolling Update, HPA)"]
+        K8S_DEPLOY --- FASTAPI["FastAPI Serving Pods\n(/predict, /health, /metrics)"]
+        PVC[("Persistent Storage PVCs\n(/app/models, /app/mlruns)")] --- FASTAPI
     end
-    class ML_Lifecycle ml;
+    class K8S_DEPLOY,FASTAPI main;
+    class PVC store;
 
-    subgraph CloudRegistry ["4. Cloud Image Registry"]
-        BUILD_IMG -->|aws ecr push| ECR[("AWS Elastic Container Registry\n(ECR: telco-churn-api)")]
+    subgraph Telemetry ["Observability & Closed-Loop Retraining"]
+        FASTAPI --> PROM["Prometheus Telemetry"]
+        PROM --> GRAFANA["Grafana Live Dashboards"]
+        FASTAPI --> DRIFT["Evidently AI Drift Monitor"]
+        DRIFT --> DRIFT_CHECK{"3 Consecutive\nDrift Windows?"}
+        DRIFT_CHECK -->|Yes: Persistent Drift| RETRAIN["Trigger Automated Retraining"]
+        RETRAIN -->|Webhook API| JENKINS
     end
-    class CloudRegistry cloud;
-
-    subgraph K8sCluster ["5. Minikube Kubernetes Cluster"]
-        ECR -->|image load / rollout| K8S_DEP["Kubernetes Deployment\n(telco-churn-api pods)"]
-        PVC_MODELS[("PVC: telco-models-pvc\n(/app/models)")] --> K8S_DEP
-        PVC_MLFLOW[("PVC: telco-mlflow-pvc\n(/app/mlruns & mlflow.db)")] --> K8S_DEP
-        K8S_SVC["Kubernetes NodePort Service\n(Port 30800)"] --> K8S_DEP
-        HPA["Horizontal Pod Autoscaler\n(CPU >= 70%)"] -.-> K8S_DEP
-        API["FastAPI Prediction Service\n(/predict, /health, /metrics)"] --- K8S_DEP
-    end
-    class K8sCluster k8s;
-
-    subgraph ObservabilityLoop ["6. Observability & Drift Closed-Loop"]
-        CLIENT["Client / Application"] -->|POST /predict\nX-API-Key| API
-        PROM["Prometheus Server\n(Scrape /metrics)"] --> API
-        GRAFANA["Grafana Dashboard\n(Real-time Visualizations)"] --> PROM
-
-        DRIFT["Evidently Drift Monitor\n(PSI & Wasserstein Distance)"] -->|Evaluate Windows| API
-        DRIFT -->|Log Metrics| PROM
-        DRIFT -->|3 Consecutive Drift Windows| RETRIGGER{"Drift Threshold\nBreached?"}
-        RETRIGGER -->|POST /job/retrain/buildWithParameters| JENKINS
-    end
-    class ObservabilityLoop obs;
+    class PROM,GRAFANA,DRIFT main;
+    class DRIFT_CHECK gate;
+    class RETRAIN ext;
 ```
 
 ---
@@ -242,74 +227,37 @@ flowchart TD
 ## 8. End-to-End System Flow
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as API Consumer
-    participant API as FastAPI Prediction Service
-    participant Prom as Prometheus Metrics
-    participant Drift as Evidently Drift Monitor
-    participant Jenkins as Jenkins Automation Server
-    participant Pipeline as ML Retraining Pipeline
-    participant MLflow as MLflow Model Registry
-    participant Docker as Docker Engine
-    participant ECR as AWS ECR Registry
-    participant K8s as Minikube / Kubernetes
+flowchart TD
+    classDef action fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef decision fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#fbbf24;
+    classDef success fill:#14532d,stroke:#4ade80,stroke-width:2px,color:#dcfce7;
+    classDef fail fill:#450a0a,stroke:#f87171,stroke-width:2px,color:#fecaca;
 
-    %% 1. Online Inference Phase
-    Note over Client,API: 1. Live Inference & Telemetry Collection
-    Client->>API: POST /predict (Payload + X-API-Key)
-    API->>API: Validate schema & execute feature transformation
-    API->>API: Score with Production model & apply optimal threshold
-    API-->>Client: 200 OK (churn_probability, decision, model_version)
-    API->>Prom: Update telco_predictions_total, latency histogram
+    START(["Client POST /predict (X-API-Key)"]) --> SERVE["FastAPI Ingests & Validates Request"]
+    SERVE --> PREDICT["Score with Production Model & Apply Optimal Threshold"]
+    PREDICT --> METRICS["Emit Prometheus Telemetry (p50/p95 latency, counts)"]
+    METRICS --> DRIFT_EVAL["Evidently AI Monitors Feature & Target Drift"]
 
-    %% 2. Observability & Drift Monitoring Phase
-    Note over Prom,Drift: 2. Drift Detection & Windowing
-    Prom->>Drift: Scrape prediction & feature distributions
-    Drift->>Drift: Compare Current Window against Reference Dataset
-    alt Drift Detected in Single Window (< 3)
-        Drift->>Drift: Increment consecutive_drift_windows count (1 or 2)
-        Drift->>Prom: Update telco_drift_detected gauge = 1
-        Note over Drift: Dampened (Requires 3 consecutive windows)
-    else 3 Consecutive Drift Windows Breached
-        Drift->>Drift: consecutive_drift_windows == 3 (Persistent Drift)
-        Drift->>Prom: Update telco_consecutive_drift_count = 3
-        Drift->>Jenkins: POST /job/telco-churn-pipeline/buildWithParameters
-    end
+    DRIFT_EVAL --> DRIFT_COND{"Drift in >= 3\nConsecutive Windows?"}
+    DRIFT_COND -->|No: Transient Spikes| MONITOR_OK["Maintain Normal Monitoring (No Action)"]
+    DRIFT_COND -->|Yes: Persistent Shift| TRIGGER["Webhook: POST /job/retrain/buildWithParameters"]
 
-    %% 3. Automated Retraining Phase
-    Note over Jenkins,MLflow: 3. Retraining Execution
-    Jenkins->>Pipeline: Ingestion, Validation & Feature Engineering
-    Jenkins->>Pipeline: Train candidate models (5-Fold Stratified CV)
-    Pipeline->>MLflow: Log candidate metrics, parameters & artifacts
-    Jenkins->>Pipeline: Evaluate candidate on test set & optimize threshold
-    Pipeline->>MLflow: Log evaluation metrics (ROC-AUC, optimal F1)
+    TRIGGER --> JENKINS_BUILD["Jenkins Runs Full Quality & Training Pipeline"]
+    JENKINS_BUILD --> TRAIN_EVAL["Train Candidates (5-Fold CV) & Evaluate PR Curve"]
+    TRAIN_EVAL --> GATE{"Section 9 Promotion Policy:\n1. F1 Gain >= +0.0100\n2. Precision Drop <= 0.0200\n3. Recall Drop <= 0.0000"}
 
-    %% 4. Section 9 Promotion Policy Gate
-    Note over Pipeline,MLflow: 4. Section 9 Promotion Gate
-    Pipeline->>Pipeline: Check: F1 gain >= +0.01, Precision drop <= 0.02, Recall drop <= 0.0
+    GATE -->|REJECT: Degraded / Stagnant| REJECT_FLOW["Tag Run 'Rejected' in MLflow\nProduction Model Unchanged\nZero Cluster Deployment"]
+    GATE -->|ACCEPT: Superior Candidate| ACCEPT_FLOW["Promote to 'Production' in MLflow\nArchive Previous Model Version"]
 
-    alt REJECT: Candidate Fails Promotion Criteria
-        Pipeline->>MLflow: Tag Candidate: "Rejected by Section 9 Policy"
-        Pipeline-->>Jenkins: Stage Exit / Rejection Logged
-        Jenkins->>Jenkins: Terminate pipeline (Zero deployment actions taken)
-        Note over K8s,API: Incumbent Production model remains live and untouched.
-    else ACCEPT: Candidate Passes Promotion Criteria
-        Pipeline->>MLflow: Transition Candidate to "Production" stage
-        Pipeline->>MLflow: Transition previous model to "Archived" stage
-        Pipeline-->>Jenkins: Promotion SUCCESS
+    ACCEPT_FLOW --> DOCKER_BUILD["Build Multi-Stage Docker Image (Tagged Git-SHA)"]
+    DOCKER_BUILD --> ECR_PUSH["Push Image to AWS ECR Registry"]
+    ECR_PUSH --> K8S_ROLL["Kubernetes Zero-Downtime Rolling Update"]
+    K8S_ROLL --> PROD_LIVE(["New Model Active in Production Serving Traffic"])
 
-        %% 5. Build, Push & Rolling Deployment
-        Note over Jenkins,K8s: 5. Containerization & Rolling Update
-        Jenkins->>Docker: Build multi-stage Docker image & tag git-SHA
-        Jenkins->>ECR: Push image to AWS ECR (latest + git-SHA)
-        Jenkins->>K8s: kubectl apply -f infra/k8s/deployment.yaml
-        K8s->>K8s: Execute zero-downtime rolling update (1/1 Ready)
-        K8s->>API: Pod Startup -> Mount PVC -> Load new Production model
-        API->>API: Health check passing (/health/readiness)
-        API->>Prom: Reset drift counters & report new model version
-        Note over Client,API: New Production model actively serving predictions.
-    end
+    class START,SERVE,PREDICT,METRICS,DRIFT_EVAL,JENKINS_BUILD,TRAIN_EVAL,DOCKER_BUILD,ECR_PUSH,K8S_ROLL action;
+    class DRIFT_COND,GATE decision;
+    class ACCEPT_FLOW,PROD_LIVE,MONITOR_OK success;
+    class REJECT_FLOW fail;
 ```
 
 ---
