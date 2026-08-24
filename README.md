@@ -576,6 +576,7 @@ Deploys on a local single-node **Minikube** cluster using declarative manifests 
 ### Kubernetes Resources Implemented:
 - `deployment.yaml`: Replicas with rolling update strategy (`maxSurge: 1`, `maxUnavailable: 0`), liveness/readiness probes, and resource limits (`cpu: 500m`, `memory: 512Mi`).
 - `service.yaml`: NodePort service exposing port 30800.
+- `secret.yaml` & `grafana-secret.yaml`: Dedicated Kubernetes Secrets for API authentication and Grafana dashboard credentials.
 - `pvc-models.yaml` & `pvc-mlflow.yaml`: Persistent volume claims for models and MLflow registry.
 - `hpa.yaml`: Horizontal Pod Autoscaler targeting 70% CPU utilization (1 to 3 pods).
 - `pdb.yaml`: Pod Disruption Budget ensuring `minAvailable: 1`.
@@ -663,8 +664,10 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
 - **Security Controls**:
   - `X-API-Key` authentication with constant-time hash comparison.
   - SlowAPI client rate limiting (60 requests/minute).
+  - Dedicated Kubernetes Secret (`infra/k8s/grafana-secret.yaml`) injecting Grafana credentials via `secretKeyRef` rather than hardcoding values in deployment manifests.
   - Unprivileged non-root execution (`appuser`, UID 10001).
   - Non-PII structured JSON logging with customer ID masking.
+  - Production secrets are not committed to Git. Local development secrets use example templates for Minikube; production environments must utilize external managed secret solutions (e.g. AWS Secrets Manager, HashiCorp Vault).
 
 ---
 
@@ -762,8 +765,8 @@ Following a final cross-phase engineering audit across all 20 phases, the reposi
 │   ├── aws/ (create_ecr_repo.ps1, push_to_ecr.ps1)
 │   ├── docker/ (Dockerfile.integration)
 │   ├── jenkins/ (Dockerfile, setup-jobs.groovy)
-│   ├── k8s/ (deployment, service, configmap, secret, pvc-models, pvc-mlflow, drift-cronjob, hpa, pdb)
-│   └── monitoring/ (prometheus-configmap, prometheus-deployment, prometheus-service, grafana-deployment, grafana-service, grafana-dashboard.json)
+│   ├── k8s/ (deployment, service, configmap, secret, grafana-secret, pvc-models, pvc-mlflow, drift-cronjob, hpa, pdb, prometheus manifests, grafana manifests)
+│   └── monitoring/ (grafana-dashboard.json)
 ├── models/
 │   ├── best_model.joblib
 │   ├── decision_threshold.json
@@ -876,20 +879,25 @@ py -3.12 tasks.py drift
 # Start Minikube
 minikube start
 
-# Apply All Manifests
+# Apply Storage & Configuration
 kubectl apply -f infra/k8s/pvc-models.yaml
 kubectl apply -f infra/k8s/pvc-mlflow.yaml
 kubectl apply -f infra/k8s/configmap.yaml
 kubectl apply -f infra/k8s/secret.yaml
+kubectl apply -f infra/k8s/grafana-secret.yaml
+
+# Deploy API & Services
 kubectl apply -f infra/k8s/deployment.yaml
 kubectl apply -f infra/k8s/service.yaml
-kubectl apply -f infra/monitoring/prometheus-configmap.yaml
-kubectl apply -f infra/monitoring/prometheus-deployment.yaml
-kubectl apply -f infra/monitoring/prometheus-service.yaml
-kubectl apply -f infra/monitoring/grafana-dashboard-configmap.yaml
-kubectl apply -f infra/monitoring/grafana-datasource-configmap.yaml
-kubectl apply -f infra/monitoring/grafana-deployment.yaml
-kubectl apply -f infra/monitoring/grafana-service.yaml
+
+# Deploy Telemetry (Prometheus & Grafana)
+kubectl apply -f infra/k8s/prometheus-configmap.yaml
+kubectl apply -f infra/k8s/prometheus-deployment.yaml
+kubectl apply -f infra/k8s/prometheus-service.yaml
+kubectl apply -f infra/k8s/grafana-datasource-configmap.yaml
+kubectl apply -f infra/k8s/grafana-dashboard-configmap.yaml
+kubectl apply -f infra/k8s/grafana-deployment.yaml
+kubectl apply -f infra/k8s/grafana-service.yaml
 ```
 
 ---
@@ -935,7 +943,8 @@ In the spirit of engineering transparency, the following constraints reflect the
 3. **Simulated Drift Evaluation**: In local CI testing, drift is evaluated using synthetic batch perturbations. Live enterprise systems would stream prediction payloads from Kafka/Kinesis.
 4. **Local Monitoring State File**: Drift window counts are stored in `reports/monitoring_state.json`. In distributed multi-replica deployments, state should be externalized to Redis or PostgreSQL.
 5. **Threshold Selection on Test Split**: Phase 8 optimized the classification threshold on the held-out test split for initial benchmarking. In production, this should be computed on a dedicated validation split to prevent optimistic calibration bias.
-6. **Cloud Production Hardening**: Production cloud infrastructure (EKS, RDS, ALB, S3, Route53) remains future work.
+6. **Local Development Secret Templates**: API and Grafana credentials utilize local Kubernetes Secret manifests with placeholder templates for Minikube execution. Production deployments require external secret managers.
+7. **Cloud Production Hardening**: Production cloud infrastructure (EKS, RDS, ALB, S3, Route53) remains future work.
 
 ---
 
