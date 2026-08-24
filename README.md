@@ -1,6 +1,6 @@
 # Telco Customer Churn MLOps Platform
 
-> **An end-to-end, production-grade Machine Learning Operations (MLOps) platform featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
+> **An End-to-End MLOps Platform — Portfolio / Interview / Local-Demo Ready featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
 
 ---
 
@@ -16,13 +16,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type Checked: mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
-[![Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/)
+[![Unit Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/unit/)
+[![Integration: 1 passed](https://img.shields.io/badge/Integration-1%20Passed%20(11%20Stages)-brightgreen)](tests/integration/)
 
 ---
 
 ## Table of Contents
 
-- [1. Project Overview](#1-project-overview)
+- [1. Project Positioning & Scope](#1-project-positioning--scope)
 - [2. Problem Statement](#2-problem-statement)
 - [3. What Makes This Project Different](#3-what-makes-this-project-different)
 - [4. Project Objectives](#4-project-objectives)
@@ -33,43 +34,60 @@
 - [9. Problem → Technology → Solution Mapping](#9-problem--technology--solution-mapping)
 - [10. Technology Stack](#10-technology-stack)
 - [11. Dataset](#11-dataset)
-- [12. Data Pipeline](#12-data-pipeline)
-- [13. Feature Engineering](#13-feature-engineering)
-- [14. Model Training](#14-model-training)
-- [15. Model Results](#15-model-results)
-- [16. Threshold Optimization](#16-threshold-optimization)
-- [17. MLflow Model Governance](#17-mlflow-model-governance)
-- [18. FastAPI Prediction Service](#18-fastapi-prediction-service)
-- [19. Docker Architecture](#19-docker-architecture)
-- [20. Kubernetes Architecture](#20-kubernetes-architecture)
-- [21. CI/CD Architecture](#21-cicd-architecture)
-- [22. Monitoring and Observability](#22-monitoring-and-observability)
-- [23. Drift Detection](#23-drift-detection)
-- [24. Automatic Retraining](#24-automatic-retraining)
-- [25. Security Architecture](#25-security-architecture)
-- [26. Reliability and Safety Mechanisms](#26-reliability-and-safety-mechanisms)
-- [27. Integration Testing](#27-integration-testing)
-- [28. Final Verification](#28-final-verification)
-- [29. Project Journey / Phase Roadmap](#29-project-journey--phase-roadmap)
-- [30. Repository Structure](#30-repository-structure)
-- [31. Installation](#31-installation)
-- [32. Run the Project](#32-run-the-project)
-- [33. Temporary Public Demo Setup](#33-temporary-public-demo-setup)
-- [34. Known Limitations](#34-known-limitations)
-- [35. Cloud Production Architecture — Future Roadmap](#35-cloud-production-architecture--future-roadmap)
-- [36. Cost Philosophy](#36-cost-philosophy)
-- [37. Documentation Links](#37-documentation-links)
-- [38. Author](#38-author)
-- [39. License](#39-license)
-- [40. Summary](#40-summary)
+- [12. Data Pipeline & Lineage](#12-data-pipeline--lineage)
+- [13. Feature Engineering & Schema Enforcement](#13-feature-engineering--schema-enforcement)
+- [14. Deterministic Model Training](#14-deterministic-model-training)
+- [15. Verified Model Results](#15-verified-model-results)
+- [16. Decision Threshold Optimization](#16-decision-threshold-optimization)
+- [17. MLflow Governance & Promotion Policy](#17-mlflow-governance--promotion-policy)
+- [18. FastAPI Prediction Service & Security](#18-fastapi-prediction-service--security)
+- [19. Docker Multi-Stage Containerization](#19-docker-multi-stage-containerization)
+- [20. Kubernetes Orchestration on Minikube](#20-kubernetes-orchestration-on-minikube)
+- [21. Jenkins CI/CD Automation Pipeline](#21-jenkins-cicd-automation-pipeline)
+- [22. Telemetry & Observability (Prometheus & Grafana)](#22-telemetry--observability-prometheus--grafana)
+- [23. Statistical Drift Detection (Evidently AI)](#23-statistical-drift-detection-evidently-ai)
+- [24. Closed-Loop Automated Retraining](#24-closed-loop-automated-retraining)
+- [25. Security & Fail-Fast Safety Mechanisms](#25-security--fail-fast-safety-mechanisms)
+- [26. Hermetic Integration Testing](#26-hermetic-integration-testing)
+- [27. Final Verification & Audit Results](#27-final-verification--audit-results)
+- [28. Project Journey / Phase Roadmap](#28-project-journey--phase-roadmap)
+- [29. Repository Structure](#29-repository-structure)
+- [30. Installation & Quickstart](#30-installation--quickstart)
+- [31. Unified Execution with tasks.py](#31-unified-execution-with-taskspy)
+- [32. Temporary Public Demo Setup (ngrok)](#32-temporary-public-demo-setup-ngrok)
+- [33. Known Limitations & Trade-Offs](#33-known-limitations--trade-offs)
+- [34. Future Cloud Productionization Roadmap](#34-future-cloud-productionization-roadmap)
+- [35. Cost Philosophy & Verification](#35-cost-philosophy--verification)
+- [36. Documentation Links](#36-documentation-links)
+- [37. Author](#37-author)
+- [38. License](#38-license)
+- [39. Summary](#39-summary)
 
 ---
 
-## 1. Project Overview
+## 1. Project Positioning & Scope
 
-The **Telco Customer Churn MLOps Platform** is a complete, automated software and machine learning system engineered to predict telecommunication customer churn, serve low-latency online predictions, monitor model health in real-time, detect statistical data drift, and safely trigger automated retraining and deployment without manual downtime or unverified model promotion.
+The **Telco Customer Churn MLOps Platform** is an **End-to-End MLOps Platform — Portfolio / Interview / Local-Demo Ready**. It is built to demonstrate how real-world machine learning systems operate as robust, versioned, observable, and testable software engineering platforms.
 
-Spanning **20 distinct engineering phases**, the project implements the complete ML lifecycle as robust software: from raw data validation and DVC tracking to multi-stage Docker builds, Kubernetes manifests on Minikube, Jenkins CI/CD automation, Prometheus/Grafana telemetry, and closed-loop retraining via an MLflow promotion gate.
+### Current Verified Runtime
+To provide a reproducible, zero-recurring-cloud-cost environment for demonstration, evaluation, and technical interviews, the platform operates on a verified local runtime:
+- **Local Kubernetes**: Single-node **Minikube** cluster managing containerized pods, NodePort routing, and Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`).
+- **CI/CD Automation**: **Jenkins LTS** executing inside a dedicated Docker runtime container.
+- **Model Registry & Tracking**: **MLflow** with a local SQLite metadata store (`sqlite:///mlflow.db`) and file-backed artifact store (`mlruns/`).
+- **Telemetry**: **Prometheus** scraping `/metrics` and **Grafana** visualizing operational/ML metrics on pre-configured dashboards.
+- **Cloud Registry Integration**: **AWS Elastic Container Registry (ECR)** (`telco-churn-api` in `ap-south-1`) used to verify remote image publishing with immutable git-SHA tags.
+
+### Architecture Scope Clarification
+| Environment Layer | Current Verified Status | Future Enterprise Cloud Target |
+| :--- | :--- | :--- |
+| **Compute / Orchestration** | Local Minikube Kubernetes (Single-Node) | Managed Amazon EKS (Multi-AZ) |
+| **Image Distribution** | AWS ECR (Verified Registry Push) | AWS ECR + Image Vulnerability Scanning |
+| **Ingress / Routing** | Kubernetes NodePort Service | AWS ALB + Route53 + ACM TLS Termination |
+| **Metadata & Registry Store** | Local SQLite (`sqlite:///mlflow.db`) | Amazon RDS Multi-AZ PostgreSQL |
+| **Artifact Storage** | Local Persistent Volumes (`hostPath`) | Amazon S3 with Lifecycle Policies |
+| **Data Drift Payload Stream** | Synthetic Batch Perturbations | Amazon Kinesis / Apache Kafka Streaming |
+
+This repository deliberately implements **production-oriented software design patterns** (fail-fast initialization, strict Pydantic schemas, multi-stage non-root containers, non-PII JSON logging, anti-leakage feature pipelines, promotion gates, and consecutive-window drift dampening) while running in a contained, cost-free local environment.
 
 ---
 
@@ -79,7 +97,7 @@ Spanning **20 distinct engineering phases**, the project implements the complete
 Customer churn is one of the highest cost drivers in the telecommunications industry. Acquiring a new customer costs 5 to 7 times more than retaining an existing one. Early detection of churn risk allows retention teams to intervene with targeted promotions, contract adjustments, or proactive customer support.
 
 ### The Engineering Challenges
-Training a machine learning model in a Jupyter Notebook does not solve customer churn in an enterprise. Real-world machine learning fails due to:
+Training a machine learning model in an isolated Jupyter Notebook does not solve customer churn in an enterprise. Real-world machine learning fails due to:
 1. **Data Leakage & Inconsistency**: Preprocessing transformations fitted across entire datasets leak test distribution into training data, yielding over-optimistic validation metrics that collapse in production.
 2. **Silent Data & Concept Drift**: Customer behavior, competitor pricing, and macroeconomic conditions change over time. Models silently degrade without producing HTTP or runtime errors.
 3. **Uncontrolled Model Deployment**: Ad-hoc model replacement can accidentally promote an overfitted or degenerate model to production, causing financial loss.
@@ -92,6 +110,26 @@ This project treats machine learning as a **disciplined software engineering sys
 
 ## 3. What Makes This Project Different
 
+```
+Traditional "Notebook" ML:
+Raw CSV ──> Notebook Cell ──> Arbitrary Split ──> Unversioned .pkl ──> Ad-hoc Script
+
+This MLOps Platform:
+Data Lineage (DVC + SHA-256)
+  └──> Strict Schema Validation (Pydantic)
+        └──> Leakage-Safe Features (ColumnTransformer)
+              └──> Deterministic Training (5-Fold Stratified CV)
+                    └──> PR-Curve Threshold Optimization & Brier Calibration
+                          └──> MLflow Governance & Section 9 Promotion Gate
+                                └──> Secure FastAPI REST Serving (Rate Limited, Non-PII)
+                                      └──> Multi-Stage Docker & AWS ECR Image Push
+                                            └──> Kubernetes Deployment on Minikube
+                                                  └──> Prometheus & Grafana Observability
+                                                        └──> Evidently AI Drift Monitoring (3-Window Dampening)
+                                                              └──> Closed-Loop Jenkins Retraining & Promotion Gate
+                                                                    └──> Hermetic 11-Stage Integration Verification
+```
+
 | Lifecycle Stage | Traditional "Notebook" ML | This MLOps Platform |
 | :--- | :--- | :--- |
 | **Data Ingestion** | Manual CSV download | SHA-256 integrity verification + DVC versioning |
@@ -100,7 +138,7 @@ This project treats machine learning as a **disciplined software engineering sys
 | **Training** | Single arbitrary train/test split | 5-fold Stratified CV + hyperparameter random search (`seed=42`) |
 | **Evaluation** | Default 0.5 threshold accuracy | PR-curve threshold optimization + Brier score calibration analysis |
 | **Governance** | Unversioned `.pkl` files on local disk | SQLite-backed MLflow Registry with deterministic Section 9 promotion gate |
-| **Serving** | Local Flask demo / Jupyter cell | Production FastAPI + SlowAPI rate limiting + API-Key authentication + non-root container |
+| **Serving** | Local Flask demo / Jupyter cell | FastAPI + SlowAPI rate limiting + API-Key authentication + non-root container |
 | **Deployment** | Manual script execution | Kubernetes Deployment + Service + PVCs + HPA + Zero-Downtime Rolling Update |
 | **CI/CD** | None | Declarative multi-stage `Jenkinsfile` orchestrating tests, builds, and rollouts |
 | **Telemetry** | Basic application logs | Real-time Prometheus metrics (histograms, counters) + Custom Grafana dashboards |
@@ -113,8 +151,8 @@ This project treats machine learning as a **disciplined software engineering sys
 1. **Deterministic Reproducibility**: Guarantee identical data splits, feature transformations, hyperparameter ranking, and evaluation metrics using fixed random seeds and strict schema enforcement.
 2. **Zero-Leakage Feature Engineering**: Enforce that feature imputers and derived encoders are fit strictly on training splits and serialized alongside the model.
 3. **Deterministic Governance & Safety Gates**: Implement an automated model promotion gate requiring measurable F1 improvements ($\ge 1\%$), bounded precision drops ($\le 2\%$), and non-decreasing recall before any artifact is marked as `Production`.
-4. **High-Performance Serving**: Deliver an asynchronous FastAPI REST prediction endpoint with Pydantic validation, structured JSON logging, and security controls.
-5. **Production-Grade Orchestration**: Package services in hardened multi-stage Docker containers and orchestrate deployments via Kubernetes manifests on Minikube with persistent volume claims.
+4. **High-Performance Serving**: Deliver an asynchronous FastAPI REST prediction endpoint with Pydantic validation, structured non-PII JSON logging, and security controls.
+5. **Production-Minded Orchestration**: Package services in hardened multi-stage Docker containers and orchestrate deployments via Kubernetes manifests on Minikube with persistent volume claims.
 6. **Continuous Observability**: Instrument inference requests with Prometheus metrics and visualize operational and ML telemetry on Grafana.
 7. **Closed-Loop Retraining**: Automatically detect feature/prediction drift across consecutive windows, trigger the CI/CD pipeline via Jenkins REST API, and conditionally deploy newly trained models only if they surpass incumbent production metrics.
 
@@ -122,12 +160,12 @@ This project treats machine learning as a **disciplined software engineering sys
 
 ## 5. Solution Overview
 
-The solution consists of seven interconnected software subsystems:
+The platform consists of seven interconnected software subsystems:
 - **Data Ingestion & Integrity**: Fetches raw data, validates SHA-256 checksums, and tracks state using DVC.
 - **Validation & Transformation**: Validates 21 raw columns against schema bounds, imputes whitespace values in `TotalCharges`, and generates 49 engineered numerical and one-hot features.
-- **Deterministic Training & Evaluation**: Tunes XGBoost and Logistic Regression candidates using 5-fold Stratified Cross-Validation, optimizes classification decision thresholds along the Precision-Recall curve ($\approx 0.2872$), and computes Brier score calibration.
+- **Deterministic Training & Evaluation**: Tunes XGBoost and Logistic Regression candidates using 5-fold Stratified Cross-Validation, optimizes classification decision thresholds along the Precision-Recall curve ($\approx 0.3254$, operational F1 = $0.6416$), and computes Brier score calibration.
 - **MLflow Model Registry**: Maintains artifact lineage, tracking runs, parameters, metrics, and lifecycle stages (`Staging`, `Production`, `Archived`).
-- **Containerized FastAPI Service**: Runs in a non-root Alpine/Debian-slim container, authenticating clients via `X-API-Key` and serving low-latency predictions.
+- **Containerized FastAPI Service**: Runs in a non-root Debian-slim container, authenticating clients via `X-API-Key` and serving low-latency predictions.
 - **Kubernetes & Cloud Registry**: Deploys pods on Minikube with PVC mounts for persistent models and pushes immutable git-SHA tagged images to AWS ECR.
 - **Telemetry, Drift & Retraining Loop**: Scrapes Prometheus metrics, visualizes performance in Grafana, evaluates population drift via Evidently AI over 3 consecutive windows, and triggers automated Jenkins retraining.
 
@@ -153,7 +191,7 @@ flowchart TD
         TRAIN --> EVAL["5. Evaluation & Threshold Sweep"]
         EVAL --> GATE{"Section 9\nPromotion Gate"}
         GATE -->|Pass: F1 gain >= 1%| PROMOTE["Promote to Production"]
-        GATE -.->|Fail: Retain Incumbent| REJECT["Reject Candidate"]
+        GATE -.->|Fail: Retain Incumbent| REJECT["Reject Candidate\n(Incumbent Stays Active)"]
     end
     class INGEST,VALID,FEAT,TRAIN,EVAL,PROMOTE main;
     class GATE gate;
@@ -162,13 +200,13 @@ flowchart TD
     subgraph Governance ["Model & Image Governance"]
         PROMOTE --> MLFLOW[("MLflow Registry\n(sqlite:///mlflow.db)")]
         PROMOTE --> DOCKER["Docker Multi-Stage Build\n(Non-root UID 10001)"]
-        DOCKER --> ECR[("AWS Elastic Container Registry\n(telco-churn-api)")]
+        DOCKER --> ECR[("AWS Elastic Container Registry\n(Image Distribution Integration)")]
     end
     class MLFLOW,ECR store;
     class DOCKER main;
 
     subgraph Cluster ["Minikube Kubernetes Cluster"]
-        ECR --> K8S_DEPLOY["Kubernetes Deployment\n(Rolling Update, HPA)"]
+        ECR -.->|Image Reference| K8S_DEPLOY["Kubernetes Deployment\n(Rolling Update, HPA)"]
         K8S_DEPLOY --- FASTAPI["FastAPI Serving Pods\n(/predict, /health, /metrics)"]
         PVC[("Persistent Storage PVCs\n(/app/models, /app/mlruns)")] --- FASTAPI
     end
@@ -179,11 +217,13 @@ flowchart TD
         FASTAPI --> PROM["Prometheus Telemetry"]
         PROM --> GRAFANA["Grafana Live Dashboards"]
         FASTAPI --> DRIFT["Evidently AI Drift Monitor"]
-        DRIFT --> DRIFT_CHECK{"3 Consecutive\nDrift Windows?"}
-        DRIFT_CHECK -->|Yes: Persistent Drift| RETRAIN["Trigger Automated Retraining"]
+        DRIFT --> DRIFT_STATE[("Monitoring State\n(3-Window Persistence)")]
+        DRIFT_STATE --> DRIFT_CHECK{"3 Consecutive\nDrift Windows?"}
+        DRIFT_CHECK -->|Yes: Persistent Shift| RETRAIN["Trigger Automated Retraining"]
         RETRAIN -->|Webhook API| JENKINS
     end
     class PROM,GRAFANA,DRIFT main;
+    class DRIFT_STATE store;
     class DRIFT_CHECK gate;
     class RETRAIN ext;
 ```
@@ -212,7 +252,7 @@ flowchart TD
 ### 7.5 Infrastructure Layer
 - **Containerization (`Dockerfile`, `docker-compose.yml`)**: Multi-stage Docker build producing an optimized runtime image executing under an unprivileged `appuser` (UID 10001).
 - **Orchestration (`infra/k8s/`)**: Declarative Kubernetes manifests for Minikube including `Deployment`, `Service` (NodePort), `ConfigMap`, `Secret`, Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`), Horizontal Pod Autoscaler (`hpa.yaml`), and Pod Disruption Budget (`pdb.yaml`).
-- **Cloud Registry (`infra/aws/`)**: Automated PowerShell deployment scripts (`create_ecr_repo.ps1`, `push_to_ecr.ps1`) for AWS Elastic Container Registry.
+- **Cloud Registry Integration (`infra/aws/`)**: Automated PowerShell deployment scripts (`create_ecr_repo.ps1`, `push_to_ecr.ps1`) pushing immutable tags to AWS Elastic Container Registry.
 
 ### 7.6 Observability Layer
 - **Prometheus Telemetry (`src/api/metrics.py`, `infra/monitoring/`)**: Custom Prometheus metrics exporter tracking prediction counts (`telco_predictions_total`), latency histograms (`telco_request_duration_seconds`), error counters, and drift gauges.
@@ -235,12 +275,12 @@ flowchart TD
     classDef fail fill:#450a0a,stroke:#f87171,stroke-width:2px,color:#fecaca;
 
     START(["Client POST /predict (X-API-Key)"]) --> SERVE["FastAPI Ingests & Validates Request"]
-    SERVE --> PREDICT["Score with Production Model & Apply Optimal Threshold"]
+    SERVE --> PREDICT["Score with Production Model & Apply Optimal Threshold (0.3254)"]
     PREDICT --> METRICS["Emit Prometheus Telemetry (p50/p95 latency, counts)"]
     METRICS --> DRIFT_EVAL["Evidently AI Monitors Feature & Target Drift"]
 
     DRIFT_EVAL --> DRIFT_COND{"Drift in >= 3\nConsecutive Windows?"}
-    DRIFT_COND -->|No: Transient Spikes| MONITOR_OK["Maintain Normal Monitoring (No Action)"]
+    DRIFT_COND -->|No: Transient Spikes| MONITOR_OK["Maintain Normal Monitoring (No Retraining)"]
     DRIFT_COND -->|Yes: Persistent Shift| TRIGGER["Webhook: POST /job/retrain/buildWithParameters"]
 
     TRIGGER --> JENKINS_BUILD["Jenkins Runs Full Quality & Training Pipeline"]
@@ -252,7 +292,7 @@ flowchart TD
 
     ACCEPT_FLOW --> DOCKER_BUILD["Build Multi-Stage Docker Image (Tagged Git-SHA)"]
     DOCKER_BUILD --> ECR_PUSH["Push Image to AWS ECR Registry"]
-    ECR_PUSH --> K8S_ROLL["Kubernetes Zero-Downtime Rolling Update"]
+    ECR_PUSH --> K8S_ROLL["Kubernetes Zero-Downtime Rolling Update on Minikube"]
     K8S_ROLL --> PROD_LIVE(["New Model Active in Production Serving Traffic"])
 
     class START,SERVE,PREDICT,METRICS,DRIFT_EVAL,JENKINS_BUILD,TRAIN_EVAL,DOCKER_BUILD,ECR_PUSH,K8S_ROLL action;
@@ -273,9 +313,9 @@ flowchart TD
 | **Classification Imbalance & Tuning** | **XGBoost & Scikit-Learn** | Gradient boosting handles non-linear interactions; StratifiedKFold maintains class ratio. | Uses 5-fold stratified cross-validation and PR-curve threshold optimization to maximize recall and operational F1. |
 | **Model Governance & Lineage** | **MLflow** | Full tracking store and model registry with stage management. | Records parameters, metrics, artifacts, git commit, and controls promotion (`Staging`, `Production`, `Archived`). |
 | **Online Inference Serving** | **FastAPI & Uvicorn** | Async execution, automatic OpenAPI generation, native Pydantic support. | Delivers sub-10ms prediction responses with defensive startup validation and robust error handling. |
-| **API Security & Abuse** | **SlowAPI & Custom Security** | Lightweight in-memory rate limiting and secure header hashing. | Prevents DDoS attacks (60 req/min) and authenticates clients via `X-API-Key` without storing plaintext keys in code. |
+| **API Security & Abuse** | **SlowAPI & Custom Security** | Lightweight in-memory rate limiting and secure header hashing. | Prevents denial of service (60 req/min) and authenticates clients via `X-API-Key` without storing plaintext keys in code. |
 | **Containerization & Isolation** | **Docker** | Standardized container packaging with multi-stage build caching. | Produces a minimal Debian-slim image running under an unprivileged non-root user (UID 10001). |
-| **Image Distribution** | **AWS ECR** | Managed cloud container registry with IAM security. | Stores immutable, git-SHA tagged container images ready for deployment. |
+| **Image Distribution** | **AWS ECR** | Managed cloud container registry with IAM security. | Stores immutable, git-SHA tagged container images verified ready for distribution. |
 | **Cluster Orchestration & Storage** | **Kubernetes (Minikube)** | Declarative resource management, rolling updates, and PVC storage. | Manages pod replication, health probes, zero-downtime rolling updates, and mounts persistent model storage. |
 | **CI/CD Automation** | **Jenkins LTS** | Industry-standard declarative pipeline automation engine. | Orchestrates the entire lifecycle: lint, unit test, integration test, train, evaluate, promote, build, push, and deploy. |
 | **Telemetry & Metrics** | **Prometheus** | Pull-based time-series database with expressive PromQL queries. | Scrapes `/metrics` for prediction counters, latency percentiles, error rates, and drift scores. |
@@ -295,9 +335,9 @@ Data & ML:        Pandas, NumPy, Scikit-Learn, XGBoost, Joblib, DVC, Evidently A
 Model Registry:   MLflow (SQLite backend)
 Inference API:    FastAPI, Uvicorn, Pydantic v2, SlowAPI
 Containerization: Docker (Multi-stage, Non-root UID 10001), Docker Compose
-Orchestration:    Kubernetes v1.30+ (Minikube), HPA, PDB, PVCs
-Cloud:            AWS ECR (Elastic Container Registry, ap-south-1)
-CI/CD:            Jenkins LTS (Declarative Jenkinsfile)
+Orchestration:    Kubernetes v1.30+ (Minikube runtime), HPA, PDB, PVCs
+Cloud Registry:   AWS ECR (Elastic Container Registry, ap-south-1)
+CI/CD:            Jenkins LTS (Declarative Jenkinsfile in Docker runtime)
 Observability:    Prometheus, Grafana
 Quality & Tests:  Pytest, Pytest-Cov, Flake8, Black, isort, mypy
 ```
@@ -322,7 +362,7 @@ The project uses the standard **IBM Telco Customer Churn** dataset:
 
 ---
 
-## 12. Data Pipeline
+## 12. Data Pipeline & Lineage
 
 ```
 Raw Data Ingestion ──> SHA-256 Checksum ──> DVC Tracking ──> Schema Validation ──> Stratified Split (80/20) ──> Train-Only Fitted Pipeline
@@ -337,7 +377,7 @@ Raw Data Ingestion ──> SHA-256 Checksum ──> DVC Tracking ──> Schema 
 
 ---
 
-## 13. Feature Engineering
+## 13. Feature Engineering & Schema Enforcement
 
 The feature engineering pipeline transforms raw records into a fixed **49-feature numerical matrix**:
 
@@ -353,7 +393,7 @@ The feature engineering pipeline transforms raw records into a fixed **49-featur
 
 ---
 
-## 14. Model Training
+## 14. Deterministic Model Training
 
 Deterministic training is executed via `src/training/train.py`:
 - **Cross-Validation**: 5-fold `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
@@ -365,26 +405,26 @@ Deterministic training is executed via `src/training/train.py`:
 
 ---
 
-## 15. Model Results
+## 15. Verified Model Results
 
-The following metrics represent the **verified historical results** recorded during project evaluation:
+The following metrics represent the **verified historical results** recorded during Phase 8 model evaluation:
 
-| Algorithm | 5-Fold CV ROC-AUC | Test ROC-AUC | Default Threshold (0.5) F1 | Optimized Threshold F1 | Brier Score |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Logistic Regression** | 0.8460 | 0.8422 | 0.6032 | — | — |
-| **XGBoost Classifier** (Winner) | **0.8500** | **0.8471** | **0.5687** | **0.6395** | **0.1356** |
+| Algorithm | 5-Fold CV ROC-AUC | Test ROC-AUC | Default (0.50) F1 | Optimal Threshold | Optimal F1 | Optimal Precision | Optimal Recall | Brier Score |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Logistic Regression** | 0.8460 | 0.8422 | 0.6032 | — | — | — | — | — |
+| **XGBoost Classifier** (Winner) | **0.8497** | **0.8469** | **0.5898** | **0.3254** | **0.6416** | **0.5598** | **0.7513** | **0.1351** |
 
-### Verified Test Set Confusion Matrix (XGBoost):
+### Verified Test Set Performance Breakdown (XGBoost):
 
-| Metric | At Default Threshold (0.50) | At Optimized Threshold (0.2872) |
-| :--- | :---: | :---: |
-| **True Negatives (TN)** | 956 | 775 |
-| **False Positives (FP)** | 79 | 260 |
-| **False Negatives (FN)** | 194 | 76 |
-| **True Positives (TP)** | 180 | 298 |
-| **Recall (Churn Caught)** | **48.13%** | **79.68%** |
-| **Precision** | **69.50%** | **53.41%** |
-| **F1 Score** | **0.5687** | **0.6395** |
+| Metric | At Default Threshold (0.50) | At Optimized Threshold (0.3254) | Operational Impact |
+| :--- | :---: | :---: | :--- |
+| **True Negatives (TN)** | 938 | 814 | Correctly identified retained customers |
+| **False Positives (FP)** | 97 | 221 | Proactive retention outreach to retained customers |
+| **False Negatives (FN)** | 177 | 93 | Unidentified churners (-47.46% reduction in missed churn) |
+| **True Positives (TP)** | 197 | 281 | Identified churners (+42.64% increase in caught churn) |
+| **Recall (Churn Caught)** | **52.67%** | **75.13%** | Increasing churn recall from 52.67% to 75.13% (+22.46 percentage points, +42.65% relative) |
+| **Precision** | **67.01%** | **55.98%** | Controlled trade-off for higher recall sensitivity |
+| **F1 Score** | **0.5898** | **0.6416** | Maximizes composite operational performance |
 
 ### Verified Model Evaluation Visualizations:
 
@@ -393,34 +433,34 @@ The following metrics represent the **verified historical results** recorded dur
   <img src="docs/images/roc_curve.png" alt="ROC Curve" width="48%" />
 </p>
 
-- **Left (Confusion Matrix)**: Shows how the optimal threshold ($0.2872$) shifts classification sensitivity to capture **79.68%** of actual churners (298 True Positives vs. only 76 False Negatives), drastically mitigating high-cost customer loss.
-- **Right (ROC Curve)**: Demonstrates strong discriminative capability across all decision boundaries with an Area Under Curve (AUC) of **0.8471** on the held-out test set.
+- **Left (Confusion Matrix)**: Shows how threshold tuning shifts classification sensitivity to identify **75.13%** of actual churners (281 True Positives vs. 93 False Negatives), increasing churn recall from 52.67% to 75.13% (+22.46 percentage points, +42.65% relative).
+- **Right (ROC Curve)**: Demonstrates strong discriminative capability across all decision boundaries with an Area Under Curve (AUC) of **0.8469** on the held-out test set.
 
 <p align="center">
   <img src="docs/images/precision_recall_curve.png" alt="Precision-Recall Curve" width="48%" />
   <img src="docs/images/feature_importance.png" alt="Feature Importance" width="48%" />
 </p>
 
-- **Left (Precision-Recall Curve)**: Illustrates the trade-off between precision and recall, identifying the optimal operating point along the curve where the composite F1 score reaches its maximum ($0.6395$).
+- **Left (Precision-Recall Curve)**: Illustrates the trade-off between precision and recall, identifying the optimal operating point along the curve where the composite F1 score reaches its maximum ($0.6416$).
 - **Right (Feature Importance)**: Ranks key customer churn drivers, highlighting that contract type (`Month-to-month`), `tenure`, `MonthlyCharges`, and `InternetService` have the strongest predictive weight in identifying at-risk customers.
 
 ---
 
-## 16. Threshold Optimization
+## 16. Decision Threshold Optimization
 
-In churn prediction, false negatives (missing a customer who leaves) are far more expensive than false positives (offering a retention discount to a loyal customer).
+In telecommunication churn prediction, false negatives (missing a churning customer) are significantly more costly than false positives (proactively offering a discount or outreach to a retained customer).
 
-- **Default Threshold (0.50)**: Misses over **51.8%** of churning customers (Recall = 0.4813).
-- **Optimized Threshold ($\approx 0.2872$)**: Sweeps 100 threshold points along the Precision-Recall curve to maximize the operational F1 score.
-  - Churn Recall jumps from **48.1% $\to$ 79.7%** (+31.6% churners caught).
-  - Overall F1 score improves from **0.5687 $\to$ 0.6395** (+7.08 points).
+- **Default Threshold (0.50)**: Misses over **47.3%** of churning customers (Recall = 0.5267).
+- **Optimized Threshold ($\approx 0.3254$)**: Sweeps 100 threshold points along the Precision-Recall curve to maximize the operational F1 score:
+  - **Recall**: Increasing churn recall from 52.67% to 75.13% (+22.46 percentage points, +42.65% relative).
+  - **F1 Score**: Improves from **0.5898 $\to$ 0.6416** (+5.18 points).
 
 > [!NOTE]
-> **Methodological Transparency**: In Phase 8, the optimal threshold was calculated on the held-out test split for initial benchmarking. In production systems, threshold tuning is computed exclusively on an internal cross-validation holdout set to prevent optimistic calibration bias.
+> **Methodological Transparency & Optimistic Bias Caveat**: In Phase 8, the optimal threshold was calculated on the held-out test split for initial benchmarking. In production systems, threshold tuning is computed exclusively on an internal cross-validation holdout set to prevent optimistic calibration bias.
 
 ---
 
-## 17. MLflow Model Governance
+## 17. MLflow Governance & Promotion Policy
 
 Model tracking and promotion are governed through `src/training/promotion.py` and `sqlite:///mlflow.db`:
 
@@ -428,7 +468,7 @@ Model tracking and promotion are governed through `src/training/promotion.py` an
 Experiment Run ──> Log Parameters & Metrics ──> Register Model ──> Section 9 Promotion Gate ──> Set Stage: Production
 ```
 
-### Promotion Policy Rules (`models/promotion_policy.json`):
+### Section 9 Promotion Policy Rules (`models/promotion_policy.json`):
 To replace the current incumbent `Production` model, a newly trained candidate must satisfy all three criteria simultaneously:
 1. **$\Delta \text{F1} \ge +0.0100$** (F1 score must improve by at least 1.0%).
 2. **$\Delta \text{Precision} \ge -0.0200$** (Precision drop must not exceed 2.0%).
@@ -439,7 +479,7 @@ When the model registry is empty (initial deployment), Version 1 is automaticall
 
 ---
 
-## 18. FastAPI Prediction Service
+## 18. FastAPI Prediction Service & Security
 
 The inference service (`src/api/app.py`) provides high-performance prediction serving:
 
@@ -486,14 +526,14 @@ curl -X POST http://localhost:8000/predict \
   "probability": 0.5432,
   "decision": "Churn",
   "churn_predicted": true,
-  "threshold_used": 0.2872,
+  "threshold_used": 0.3254,
   "model_version": 1
 }
 ```
 
 ---
 
-## 19. Docker Architecture
+## 19. Docker Multi-Stage Containerization
 
 The container image is built via a hardened multi-stage `Dockerfile`:
 
@@ -506,9 +546,9 @@ The container image is built via a hardened multi-stage `Dockerfile`:
 
 ---
 
-## 20. Kubernetes Architecture
+## 20. Kubernetes Orchestration on Minikube
 
-Deployed on a local single-node **Minikube** cluster using manifests in `infra/k8s/`:
+Deploys on a local single-node **Minikube** cluster using declarative manifests in `infra/k8s/`:
 
 ```
                            ┌───────────────────────────────┐
@@ -539,13 +579,13 @@ Deployed on a local single-node **Minikube** cluster using manifests in `infra/k
 - `pvc-models.yaml` & `pvc-mlflow.yaml`: Persistent volume claims for models and MLflow registry.
 - `hpa.yaml`: Horizontal Pod Autoscaler targeting 70% CPU utilization (1 to 3 pods).
 - `pdb.yaml`: Pod Disruption Budget ensuring `minAvailable: 1`.
-- `drift-cronjob.yaml`: CronJob running scheduled Evidently drift evaluation.
+- `drift-cronjob.yaml`: CronJob running scheduled Evidently drift evaluation with persistent `/app/reports` mount.
 
 ---
 
-## 21. CI/CD Architecture
+## 21. Jenkins CI/CD Automation Pipeline
 
-The continuous integration and deployment lifecycle is automated through a declarative `Jenkinsfile`:
+The continuous integration and deployment lifecycle is automated through a declarative `Jenkinsfile` running in a containerized Jenkins environment:
 
 | Stage | Action | Verification / Gate |
 | :--- | :--- | :--- |
@@ -564,7 +604,7 @@ The continuous integration and deployment lifecycle is automated through a decla
 
 ---
 
-## 22. Monitoring and Observability
+## 22. Telemetry & Observability (Prometheus & Grafana)
 
 The platform instruments both operational and machine learning telemetry:
 
@@ -586,7 +626,7 @@ The platform instruments both operational and machine learning telemetry:
 
 ---
 
-## 23. Drift Detection
+## 23. Statistical Drift Detection (Evidently AI)
 
 Data drift monitoring is executed via `src/monitoring/drift.py` using **Evidently AI**:
 - **Drift Metrics**: Population Stability Index (PSI) for categorical features and Wasserstein distance for continuous features.
@@ -595,7 +635,7 @@ Data drift monitoring is executed via `src/monitoring/drift.py` using **Evidentl
 
 ---
 
-## 24. Automatic Retraining
+## 24. Closed-Loop Automated Retraining
 
 ```
 Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger ──> Retraining Pipeline ──> Promotion Gate ──> Conditional Rollout
@@ -607,33 +647,28 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
    - **Accepted**: If candidate model beats the incumbent model ($\Delta \text{F1} \ge 1\%$), it is promoted to `Production` in MLflow, containerized, pushed to ECR, and deployed to Kubernetes.
    - **Rejected**: If candidate model fails promotion criteria, the pipeline exits safely. The incumbent model remains in `Production` and continues serving traffic without interruption.
 
----
-
-## 25. Security Architecture
-
-| Security Domain | Control Implemented | Operational Detail |
-| :--- | :--- | :--- |
-| **API Authentication** | API Secret Keys | `X-API-Key` validated using constant-time comparison against hashed secret list. |
-| **Rate Limiting** | SlowAPI (60 req/min) | In-memory token bucket rate limiting prevents abuse and resource exhaustion. |
-| **Input Validation** | Pydantic v2 Models | Rejects extra fields, enforces type safety and strict range constraints. |
-| **Container Security** | Non-Root Execution | Dedicated `appuser` (UID 10001) prevents container breakout privileges. |
-| **Secrets Management** | Environment / K8s Secrets | No plaintext credentials committed to Git; resolved via `.env` and Kubernetes Secret objects. |
-| **Logging Sanitization** | Non-PII JSON Logs | Customer identifiers and sensitive demographic attributes stripped or hashed from logs. |
-| **Model Governance** | Deterministic Promotion Gate | Prevents unauthorized or unverified model artifacts from entering `Production`. |
+> [!IMPORTANT]
+> **Retraining Does Not Bypass Promotion**: Retraining automatically initiates the pipeline, but does **not** guarantee deployment. If newly retrained models do not satisfy the Section 9 promotion criteria, the candidate is marked as rejected, the incumbent model remains active, and zero cluster changes occur.
 
 ---
 
-## 26. Reliability and Safety Mechanisms
+## 25. Security & Fail-Fast Safety Mechanisms
 
-- **Fail-Fast API Startup**: On startup, FastAPI validates the presence, deserialization, and schema compatibility of the `Production` model. If missing or corrupted, the service refuses to start.
-- **Feature Schema Guard**: The 49-feature schema ordering is enforced prior to matrix creation, preventing feature permutation bugs.
-- **Provenance Integrity**: Evaluation and training reports record the dataset SHA-256 and Git commit hash for full auditability.
-- **Hermetic Test Isolation**: Tests run in ephemeral mock directories, preventing pollution of canonical `mlflow.db` or `models/` artifacts.
-- **Zero-Downtime Rolling Updates**: Kubernetes readiness probes ensure the new container is healthy and the model is loaded before traffic is shifted.
+### System Design Rationale:
+- **Data Lineage & Checksums**: Every raw dataset is verified against SHA-256 hashes and tracked with DVC to guarantee that corrupted or modified data cannot enter downstream training.
+- **Feature Schema Enforcement**: Output column order and dimensionality (49 features) are strictly locked in `models/feature_schema.json`. This prevents catastrophic runtime errors caused by unexpected one-hot column permutations.
+- **Model Provenance**: Model artifacts are serialized with training metadata JSON recording dataset SHA-256, pipeline SHA-256, Git commit hash, and evaluation metrics for complete auditability.
+- **Fail-Fast Startup**: On container startup, FastAPI validates the presence, deserialization, and schema compatibility of the `Production` model. If missing or corrupted, the service refuses to start.
+- **Drift State Persistence**: The 3-window dampening state is saved to persistent volume storage (`/app/reports/monitoring_state.json`), ensuring ephemeral Kubernetes CronJob pods maintain accurate drift memory across runs.
+- **Security Controls**:
+  - `X-API-Key` authentication with constant-time hash comparison.
+  - SlowAPI client rate limiting (60 requests/minute).
+  - Unprivileged non-root execution (`appuser`, UID 10001).
+  - Non-PII structured JSON logging with customer ID masking.
 
 ---
 
-## 27. Integration Testing
+## 26. Hermetic Integration Testing
 
 The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) verifies all 11 lifecycle stages in an isolated temporary workspace:
 
@@ -642,25 +677,25 @@ The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) v
 ```
 
 - **Execution Time**: Under **55 seconds** locally and in CI.
-- **Isolation Guarantee**: Uses an ephemeral SQLite database (`integration_mlflow.db`) and temporary directories without mutating production artifacts.
+- **Isolation Guarantee**: Uses an ephemeral SQLite database (`integration_mlflow.db`) and temporary directories without mutating canonical `mlflow.db` or `models/` production artifacts.
 
 ---
 
-## 28. Final Verification
+## 27. Final Verification & Audit Results
 
-Following an independent technical audit of all 20 phases, the repository is verified in a clean, fully passing state:
+Following a final cross-phase engineering audit across all 20 phases, the repository is verified in a clean, fully passing state:
 
 - **Total Phases Completed**: 20 / 20 (100%)
 - **Total Unit Tests**: 88 / 88 Passed
-- **Integration Tests**: 1 / 1 Passed (11 stages hermetic verification)
-- **Defects Remediated**:
+- **Hermetic Integration Tests**: 1 / 1 Passed (11 stages verified in isolation)
+- **Defects Remediated & Confirmed**:
   1. Provenance SHA-256 workspace path isolation fixed.
   2. Kubernetes drift CronJob volume mount persistence verified.
 - **Working Tree**: Clean, all code formatted with Black, isort, Flake8, and mypy type-checked.
 
 ---
 
-## 29. Project Journey / Phase Roadmap
+## 28. Project Journey / Phase Roadmap
 
 | Phase | Milestone | Description | Status |
 | :--- | :--- | :--- | :---: |
@@ -688,7 +723,7 @@ Following an independent technical audit of all 20 phases, the repository is ver
 
 ---
 
-## 30. Repository Structure
+## 29. Repository Structure
 
 ```
 ├── .dockerignore
@@ -699,6 +734,7 @@ Following an independent technical audit of all 20 phases, the repository is ver
 ├── .pre-commit-config.yaml
 ├── Dockerfile
 ├── Jenkinsfile
+├── LICENSE
 ├── PROJECT_PROGRESS.md
 ├── README.md
 ├── data/
@@ -718,9 +754,10 @@ Following an independent technical audit of all 20 phases, the repository is ver
 │   │   ├── 0004-model-evaluation-threshold-optimization-and-calibration.md
 │   │   ├── 0005-mlflow-tracking-and-model-promotion-policy.md
 │   │   └── 0006-end-to-end-integration-testing-and-isolation.md
-│   └── diagrams/
-│       ├── architecture.md
-│       └── sequence.md
+│   ├── diagrams/
+│   │   ├── architecture.md
+│   │   └── sequence.md
+│   └── images/
 ├── infra/
 │   ├── aws/ (create_ecr_repo.ps1, push_to_ecr.ps1)
 │   ├── docker/ (Dockerfile.integration)
@@ -760,7 +797,7 @@ Following an independent technical audit of all 20 phases, the repository is ver
 
 ---
 
-## 31. Installation
+## 30. Installation & Quickstart
 
 ### Prerequisites:
 - Python 3.12+
@@ -779,7 +816,7 @@ py -3.12 -m venv .venv
 
 ### Step 2: Install Dependencies
 ```powershell
-python tasks.py install
+py -3.12 tasks.py install
 ```
 
 ### Step 3: Configure Environment Variables
@@ -789,49 +826,49 @@ Copy-Item .env.example .env
 
 ---
 
-## 32. Run the Project
+## 31. Unified Execution with tasks.py
 
-All lifecycle commands are unified via cross-platform `tasks.py`:
+All lifecycle operations are driven by a cross-platform Python task runner (`tasks.py`), avoiding OS-specific Makefile dependencies:
 
 ```powershell
-# 1. Run Static Analysis & Linting
-python tasks.py lint
+# 1. Run Static Analysis & Linting (black, isort, flake8, mypy)
+py -3.12 tasks.py lint
 
 # 2. Run Full Unit Test Suite (88 tests)
-python tasks.py test
+py -3.12 tasks.py test
 
-# 3. Run Hermetic End-to-End Integration Test
-python tasks.py integration-test
+# 3. Run Hermetic End-to-End Integration Test (11 stages)
+py -3.12 tasks.py integration-test
 
 # 4. Ingest Raw Dataset & Compute Checksums
-python tasks.py ingest
+py -3.12 tasks.py ingest
 
 # 5. Validate Schema & Detect Data Anomalies
-python tasks.py validate
+py -3.12 tasks.py validate
 
 # 6. Execute Feature Engineering Pipeline (49 Features)
-python tasks.py features
+py -3.12 tasks.py features
 
 # 7. Train Models with 5-Fold Stratified Cross-Validation
-python tasks.py train
+py -3.12 tasks.py train
 
 # 8. Evaluate Winning Model, Optimize Threshold & Plot Curves
-python tasks.py evaluate
+py -3.12 tasks.py evaluate
 
 # 9. Execute MLflow Model Promotion Gate
-python tasks.py promote
+py -3.12 tasks.py promote
 
 # 10. Start Local FastAPI Inference Server
-python tasks.py serve
+py -3.12 tasks.py serve
 
 # 11. Build Multi-Stage Docker Image
-python tasks.py docker-build
+py -3.12 tasks.py docker-build
 
 # 12. Run Docker Container Locally with Volume Mounts
-python tasks.py docker-run
+py -3.12 tasks.py docker-run
 
 # 13. Run Evidently AI Drift Monitoring Pipeline
-python tasks.py drift
+py -3.12 tasks.py drift
 ```
 
 ### Deploying to Kubernetes (Minikube):
@@ -857,12 +894,17 @@ kubectl apply -f infra/monitoring/grafana-service.yaml
 
 ---
 
-## 33. Temporary Public Demo Setup
+## 32. Temporary Public Demo Setup (ngrok)
 
-You can expose the local Grafana dashboard or FastAPI service externally using an **ngrok** tunnel.
+You can expose the local Grafana dashboard or FastAPI service externally for a live demonstration using an **ngrok** tunnel.
 
 > [!IMPORTANT]
-> **Not Cloud Hosting**: An ngrok tunnel is an ephemeral development bridge to your local computer. The public link is active **only** while your laptop is powered on, Minikube is active, and both port-forwarding and ngrok processes are running.
+> **Temporary Local Demo vs Cloud Hosting**: An ngrok tunnel is an ephemeral development bridge to your local computer. The public URL is temporary and active **only** while:
+> - Your local machine remains powered ON.
+> - Minikube remains running.
+> - The `kubectl port-forward` process remains active.
+> - The `ngrok` process remains active.
+> This is a demonstration tunnel, not a 24/7 cloud deployment.
 
 ### How to Start the Public Demo:
 
@@ -885,18 +927,19 @@ You can expose the local Grafana dashboard or FastAPI service externally using a
 
 ---
 
-## 34. Known Limitations
+## 33. Known Limitations & Trade-Offs
 
-In the spirit of engineering honesty and rigor, the following design constraints reflect the local single-node architecture:
+In the spirit of engineering transparency, the following constraints reflect the local single-node architecture:
 1. **Single-Node Minikube Runtime**: Employs `hostPath` persistent volumes on local disk. Cloud-native failover, multi-AZ replication, and managed EBS/EFS CSI drivers are not present in this local runtime.
-2. **Local SQLite MLflow Backend**: Uses SQLite (`sqlite:///mlflow.db`) with file-backed artifact storage (`mlruns/`). SQLite does not support distributed concurrent writes.
-3. **Simulated Drift Windows**: For automated CI testing, drift is evaluated using synthetic perturbations. Live enterprise systems would stream prediction payloads from Kafka/Kinesis.
-4. **Local Monitoring State**: Drift window counts are stored in `reports/monitoring_state.json`. In distributed multi-replica deployments, state should be externalized to Redis or PostgreSQL.
-5. **Threshold Selection on Test Split**: Phase 8 optimized the classification threshold on the held-out test split for initial benchmarking. In production, this should be computed on a dedicated validation split.
+2. **Local SQLite MLflow Backend**: Uses SQLite (`sqlite:///mlflow.db`) with file-backed artifact storage (`mlruns/`). SQLite does not support distributed concurrent writes across multi-worker clusters.
+3. **Simulated Drift Evaluation**: In local CI testing, drift is evaluated using synthetic batch perturbations. Live enterprise systems would stream prediction payloads from Kafka/Kinesis.
+4. **Local Monitoring State File**: Drift window counts are stored in `reports/monitoring_state.json`. In distributed multi-replica deployments, state should be externalized to Redis or PostgreSQL.
+5. **Threshold Selection on Test Split**: Phase 8 optimized the classification threshold on the held-out test split for initial benchmarking. In production, this should be computed on a dedicated validation split to prevent optimistic calibration bias.
+6. **Cloud Production Hardening**: Production cloud infrastructure (EKS, RDS, ALB, S3, Route53) remains future work.
 
 ---
 
-## 35. Cloud Production Architecture — Future Roadmap
+## 34. Future Cloud Productionization Roadmap
 
 The following architecture represents the target design for migrating this local platform to a fully managed cloud enterprise environment:
 
@@ -920,7 +963,7 @@ The following architecture represents the target design for migrating this local
 
 ---
 
-## 36. Cost Philosophy
+## 35. Cost Philosophy & Verification
 
 This project was intentionally engineered with a **zero-recurring-cloud-cost philosophy**:
 - **Local Infrastructure**: Compute, containerization, orchestration, telemetry, and CI/CD run locally on Docker, Minikube, and Jenkins.
@@ -929,10 +972,10 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 
 ---
 
-## 37. Documentation Links
+## 36. Documentation Links
 
-- **Architecture Diagram**: [`docs/diagrams/architecture.md`](docs/diagrams/architecture.md)
-- **Closed-Loop Sequence Diagram**: [`docs/diagrams/sequence.md`](docs/diagrams/sequence.md)
+- **System Architecture Diagram**: [`docs/diagrams/architecture.md`](docs/diagrams/architecture.md)
+- **Closed-Loop Retraining Sequence**: [`docs/diagrams/sequence.md`](docs/diagrams/sequence.md)
 - **Architecture Decision Records (ADRs)**: [`docs/adr/README.md`](docs/adr/README.md)
 - **Final Human Acceptance Report**: [`docs/FINAL_ACCEPTANCE_REPORT.md`](docs/FINAL_ACCEPTANCE_REPORT.md)
 - **Cloud Financial Cost Report**: [`docs/COST_REPORT.md`](docs/COST_REPORT.md)
@@ -941,7 +984,7 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 
 ---
 
-## 38. Author
+## 37. Author
 
 **Aakash S. S.**
 - **Email**: [aakash1552005@gmail.com](mailto:aakash1552005@gmail.com)
@@ -949,12 +992,12 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 
 ---
 
-## 39. License
+## 38. License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-## 40. Summary
+## 39. Summary
 
 > *"This project demonstrates not only how to train a machine learning model, but how to govern, serve, observe, validate, and safely evolve an ML software system in production."*
