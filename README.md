@@ -1,6 +1,6 @@
 # Telco Customer Churn MLOps Platform
 
-> **An End-to-End MLOps Platform — Portfolio / Interview / Local-Demo Ready featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
+> **An End-to-End MLOps Platform — Local-Demo Ready featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
 
 ---
 
