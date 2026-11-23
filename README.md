@@ -24,17 +24,17 @@
 
 ---
 
-## Project Positioning & Scope
+## Project Overview & Engineering Scope
 
-The **Telco Customer Churn MLOps Platform** is an **End-to-End MLOps Platform — Portfolio / Interview / Local-Demo Ready**. It is built to demonstrate how real-world machine learning systems operate as robust, versioned, observable, and testable software engineering platforms.
+The **Telco Customer Churn MLOps Platform** is a **production-grade machine learning operations system** engineered to automate customer retention workflows end-to-end. It demonstrates how real-world predictive models operate as resilient, versioned, observable, and continuously monitored software engineering platforms.
 
-### Current Verified Runtime
-To provide a reproducible, zero-recurring-cloud-cost environment for demonstration, evaluation, and technical interviews, the platform operates on a verified local runtime:
-- **Local Kubernetes**: Single-node **Minikube** cluster managing containerized pods, NodePort routing, and Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`).
-- **CI/CD Automation**: **Jenkins LTS** executing inside a dedicated Docker runtime container.
-- **Model Registry & Tracking**: **MLflow** with a local SQLite metadata store (`sqlite:///mlflow.db`) and file-backed artifact store (`mlruns/`).
-- **Telemetry**: **Prometheus** scraping `/metrics` and **Grafana** visualizing operational/ML metrics on pre-configured dashboards.
-- **Cloud Registry Integration**: **AWS Elastic Container Registry (ECR)** (`telco-churn-api` in `ap-south-1`) used to verify remote image publishing with immutable git-SHA tags.
+### Verified Architecture & Infrastructure Baseline
+The platform is fully operationalized with automated deployment pipelines and zero cloud-vendor lock-in:
+- **Container Orchestration**: Single-node **Kubernetes (Minikube)** managing containerized inference pods, NodePort routing, and Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`).
+- **CI/CD Automation**: **Jenkins LTS** declarative automation executing hermetic test suites, linting, model training, and rollout gates.
+- **Model Registry & Governance**: **MLflow** tracking parameters, metrics, run lineage, and enforcing automated production promotion gates.
+- **Telemetry & Monitoring**: **Prometheus** scraping real-time inference latency histograms and **Grafana** visualizing operational dashboards.
+- **Cloud Registry Distribution**: **AWS Elastic Container Registry (ECR)** (`telco-churn-api` in `ap-south-1`) verifying immutable git-SHA tagged image publishing.
 
 ### Architecture Scope Clarification
 | Environment Layer | Current Verified Status | Future Enterprise Cloud Target |
