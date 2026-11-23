@@ -910,8 +910,8 @@ The following architecture represents the target design for migrating this local
 
 **Aakash S. S.**
 - **Email**: [aakash1552005@gmail.com](mailto:aakash1552005@gmail.com)
-- **GitHub**: [@aakash1552005](https://github.com/aakash1552005)
-- **Live Demo**: [telco-churn-mlops.streamlit.app](https://telco-churn-mlops.streamlit.app/)
+- **LinkedIn**: [linkedin.com/in/aakash-s-s-88b91a301](https://www.linkedin.com/in/aakash-s-s-88b91a301/)
+- **Website**: [aakash1552005.github.io](https://aakash1552005.github.io/)
 
 ---
 

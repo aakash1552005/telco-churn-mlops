@@ -359,5 +359,5 @@ with st.expander("🏛️ Enterprise Production Architecture & MLOps Infrastruct
             )
 
 st.caption(
-    "GitHub Repository: [github.com/aakash1552005/telco-churn-mlops](https://github.com/aakash1552005/telco-churn-mlops) · Developed by Aakash S S"
+    "Developed by [Aakash S S](https://aakash1552005.github.io/) · [LinkedIn](https://www.linkedin.com/in/aakash-s-s-88b91a301/) · [GitHub Repository](https://github.com/aakash1552005/telco-churn-mlops)"
 )
