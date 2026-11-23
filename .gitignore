@@ -74,3 +74,4 @@ Thumbs.db
 # Infra scratch & local secrets
 infra/jenkins/minikube-kubeconfig.yaml
 infra/k8s/scratch/
+PROJECT_PROGRESS.md

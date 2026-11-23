@@ -1,9 +1,11 @@
 # Telco Customer Churn MLOps Platform
 
-> **An End-to-End MLOps Platform — Local-Demo Ready featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
+> **An End-to-End MLOps Platform featuring automated data lineage, deterministic model training, MLflow governance, containerized FastAPI serving, Kubernetes orchestration, Prometheus/Grafana observability, Evidently AI drift monitoring, and closed-loop automated retraining.**
 
 ---
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-🚀_Open_App-00C853?style=for-the-badge)](https://telco-churn-mlops.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://telco-churn-mlops.streamlit.app/)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![MLflow](https://img.shields.io/badge/MLflow-2.11+-0194E2?style=flat&logo=mlflow&logoColor=white)](https://mlflow.org/)
@@ -13,12 +15,12 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Telemetry-E6522C?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![AWS ECR](https://img.shields.io/badge/AWS-ECR-FF9900?style=flat&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/ecr/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Type Checked: mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
 [![Unit Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/unit/)
 [![Integration: 1 passed](https://img.shields.io/badge/Integration-1%20Passed%20(11%20Stages)-brightgreen)](tests/integration/)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://telco-churn-mlops.streamlit.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> 🚀 **Live Interactive Demo**: [https://telco-churn-mlops.streamlit.app/](https://telco-churn-mlops.streamlit.app/)  
+> Test customer churn risk predictions, simulate pricing and contract adjustments, and explore real-time retention recommendations directly in your browser with zero installation.
 
 ---
 
@@ -121,7 +123,7 @@ Data Lineage (DVC + SHA-256)
         └──> Leakage-Safe Features (ColumnTransformer)
               └──> Deterministic Training (5-Fold Stratified CV)
                     └──> PR-Curve Threshold Optimization & Brier Calibration
-                          └──> MLflow Governance & Section 9 Promotion Gate
+                          └──> MLflow Governance & Automated Promotion Gate
                                 └──> Secure FastAPI REST Serving (Rate Limited, Non-PII)
                                       └──> Multi-Stage Docker & AWS ECR Image Push
                                             └──> Kubernetes Deployment on Minikube
@@ -138,7 +140,7 @@ Data Lineage (DVC + SHA-256)
 | **Feature Pipeline** | Ad-hoc pandas functions on full dataset | Train-only fitted Scikit-Learn `ColumnTransformer` + 49-feature schema lock |
 | **Training** | Single arbitrary train/test split | 5-fold Stratified CV + hyperparameter random search (`seed=42`) |
 | **Evaluation** | Default 0.5 threshold accuracy | PR-curve threshold optimization + Brier score calibration analysis |
-| **Governance** | Unversioned `.pkl` files on local disk | SQLite-backed MLflow Registry with deterministic Section 9 promotion gate |
+| **Governance** | Unversioned `.pkl` files on local disk | SQLite-backed MLflow Registry with deterministic automated promotion gate |
 | **Serving** | Local Flask demo / Jupyter cell | FastAPI + SlowAPI rate limiting + API-Key authentication + non-root container |
 | **Deployment** | Manual script execution | Kubernetes Deployment + Service + PVCs + HPA + Zero-Downtime Rolling Update |
 | **CI/CD** | None | Declarative multi-stage `Jenkinsfile` orchestrating tests, builds, and rollouts |
@@ -190,7 +192,7 @@ flowchart TD
         VALID --> FEAT["3. Feature Pipeline (49 Features)"]
         FEAT --> TRAIN["4. Deterministic Training (5-Fold CV)"]
         TRAIN --> EVAL["5. Evaluation & Threshold Sweep"]
-        EVAL --> GATE{"Section 9\nPromotion Gate"}
+        EVAL --> GATE{"Automated\nPromotion Gate"}
         GATE -->|Pass: F1 gain >= 1%| PROMOTE["Promote to Production"]
         GATE -.->|Fail: Retain Incumbent| REJECT["Reject Candidate\n(Incumbent Stays Active)"]
     end
@@ -244,7 +246,7 @@ flowchart TD
 
 ### 7.3 Model Governance Layer
 - **MLflow Tracking & Registry (`src/training/promotion.py`)**: SQLite-backed registry (`sqlite:///mlflow.db`) and local artifact store (`mlruns/`). Models are logged with complete parameters, metrics, feature schema, and dataset hash tags.
-- **Section 9 Promotion Policy**: Evaluates candidate models against incumbent production models using deterministic promotion criteria before updating registry stages (`Staging` $\to$ `Production` $\to$ `Archived`).
+- **Automated Promotion Policy**: Evaluates candidate models against incumbent production models using deterministic promotion criteria before updating registry stages (`Staging` $\to$ `Production` $\to$ `Archived`).
 
 ### 7.4 Serving Layer
 - **FastAPI Application (`src/api/`)**: High-performance asynchronous REST API (`src/api/app.py`, `routes.py`, `schemas.py`) validating incoming requests with Pydantic v2.
@@ -286,7 +288,7 @@ flowchart TD
 
     TRIGGER --> JENKINS_BUILD["Jenkins Runs Full Quality & Training Pipeline"]
     JENKINS_BUILD --> TRAIN_EVAL["Train Candidates (5-Fold CV) & Evaluate PR Curve"]
-    TRAIN_EVAL --> GATE{"Section 9 Promotion Policy:\n1. F1 Gain >= +0.0100\n2. Precision Drop <= 0.0200\n3. Recall Drop <= 0.0000"}
+    TRAIN_EVAL --> GATE{"Automated Promotion Policy:\n1. F1 Gain >= +0.0100\n2. Precision Drop <= 0.0200\n3. Recall Drop <= 0.0000"}
 
     GATE -->|REJECT: Degraded / Stagnant| REJECT_FLOW["Tag Run 'Rejected' in MLflow\nProduction Model Unchanged\nZero Cluster Deployment"]
     GATE -->|ACCEPT: Superior Candidate| ACCEPT_FLOW["Promote to 'Production' in MLflow\nArchive Previous Model Version"]
@@ -466,10 +468,10 @@ In telecommunication churn prediction, false negatives (missing a churning custo
 Model tracking and promotion are governed through `src/training/promotion.py` and `sqlite:///mlflow.db`:
 
 ```
-Experiment Run ──> Log Parameters & Metrics ──> Register Model ──> Section 9 Promotion Gate ──> Set Stage: Production
+Experiment Run ──> Log Parameters & Metrics ──> Register Model ──> Automated Promotion Gate ──> Set Stage: Production
 ```
 
-### Section 9 Promotion Policy Rules (`models/promotion_policy.json`):
+### Automated Promotion Policy Rules (`models/promotion_policy.json`):
 To replace the current incumbent `Production` model, a newly trained candidate must satisfy all three criteria simultaneously:
 1. **$\Delta \text{F1} \ge +0.0100$** (F1 score must improve by at least 1.0%).
 2. **$\Delta \text{Precision} \ge -0.0200$** (Precision drop must not exceed 2.0%).
@@ -598,7 +600,7 @@ The continuous integration and deployment lifecycle is automated through a decla
 | **5. Data Validation** | Ingests data, validates schema and hashes | Validation report clean |
 | **6. Model Training** | Executes 5-fold CV across XGBoost & Logistic Regression | Produces candidate artifact |
 | **7. Evaluation** | PR-curve threshold sweep & calibration analysis | Produces metrics reports |
-| **8. Promotion Gate** | Evaluates Section 9 criteria against MLflow Production model | **Deployment Gate** |
+| **8. Promotion Gate** | Evaluates automated criteria against MLflow Production model | **Deployment Gate** |
 | **9. Docker Build** | Builds multi-stage container tagged with git-SHA digest | Image built successfully |
 | **10. ECR Push** | Pushes immutable tags (`<git-sha>`, `latest`) to AWS ECR | Digest verified on ECR |
 | **11. K8s Rollout** | Performs zero-downtime rolling update on Minikube | Pods 1/1 Ready |
@@ -650,7 +652,7 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
    - **Rejected**: If candidate model fails promotion criteria, the pipeline exits safely. The incumbent model remains in `Production` and continues serving traffic without interruption.
 
 > [!IMPORTANT]
-> **Retraining Does Not Bypass Promotion**: Retraining automatically initiates the pipeline, but does **not** guarantee deployment. If newly retrained models do not satisfy the Section 9 promotion criteria, the candidate is marked as rejected, the incumbent model remains active, and zero cluster changes occur.
+> **Retraining Does Not Bypass Promotion**: Retraining automatically initiates the pipeline, but does **not** guarantee deployment. If newly retrained models do not satisfy the automated promotion criteria, the candidate is marked as rejected, the incumbent model remains active, and zero cluster changes occur.
 
 ---
 
@@ -734,8 +736,10 @@ Following a comprehensive end-to-end engineering audit, the platform is verified
 ├── Dockerfile
 ├── Jenkinsfile
 ├── LICENSE
-├── PROJECT_PROGRESS.md
 ├── README.md
+├── requirements.txt
+├── streamlit_app.py
+├── tasks.py
 ├── data/
 │   ├── raw/ (telco_churn.csv, .gitkeep)
 │   └── processed/ (train.csv, test.csv, .gitignore)
@@ -996,7 +1000,7 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 - **Final Human Acceptance Report**: [`docs/FINAL_ACCEPTANCE_REPORT.md`](docs/FINAL_ACCEPTANCE_REPORT.md)
 - **Cloud Financial Cost Report**: [`docs/COST_REPORT.md`](docs/COST_REPORT.md)
 - **Infrastructure Teardown Guide**: [`docs/TEARDOWN_GUIDE.md`](docs/TEARDOWN_GUIDE.md)
-- **Implementation Progress Log**: [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md)
+- **Interactive Live Web Demo**: [telco-churn-mlops.streamlit.app](https://telco-churn-mlops.streamlit.app/)
 
 ---
 
