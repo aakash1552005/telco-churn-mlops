@@ -24,51 +24,7 @@
 
 ---
 
-## Table of Contents
-
-- [1. Project Positioning & Scope](#1-project-positioning--scope)
-- [2. Problem Statement](#2-problem-statement)
-- [3. What Makes This Project Different](#3-what-makes-this-project-different)
-- [4. Project Objectives](#4-project-objectives)
-- [5. Solution Overview](#5-solution-overview)
-- [6. High-Level Architecture](#6-high-level-architecture)
-- [7. Detailed System Architecture](#7-detailed-system-architecture)
-- [8. End-to-End System Flow](#8-end-to-end-system-flow)
-- [9. Problem → Technology → Solution Mapping](#9-problem--technology--solution-mapping)
-- [10. Technology Stack](#10-technology-stack)
-- [11. Dataset](#11-dataset)
-- [12. Data Pipeline & Lineage](#12-data-pipeline--lineage)
-- [13. Feature Engineering & Schema Enforcement](#13-feature-engineering--schema-enforcement)
-- [14. Deterministic Model Training](#14-deterministic-model-training)
-- [15. Verified Model Results](#15-verified-model-results)
-- [16. Decision Threshold Optimization](#16-decision-threshold-optimization)
-- [17. MLflow Governance & Promotion Policy](#17-mlflow-governance--promotion-policy)
-- [18. FastAPI Prediction Service & Security](#18-fastapi-prediction-service--security)
-- [19. Docker Multi-Stage Containerization](#19-docker-multi-stage-containerization)
-- [20. Kubernetes Orchestration on Minikube](#20-kubernetes-orchestration-on-minikube)
-- [21. Jenkins CI/CD Automation Pipeline](#21-jenkins-cicd-automation-pipeline)
-- [22. Telemetry & Observability (Prometheus & Grafana)](#22-telemetry--observability-prometheus--grafana)
-- [23. Statistical Drift Detection (Evidently AI)](#23-statistical-drift-detection-evidently-ai)
-- [24. Closed-Loop Automated Retraining](#24-closed-loop-automated-retraining)
-- [25. Security & Fail-Fast Safety Mechanisms](#25-security--fail-fast-safety-mechanisms)
-- [26. Hermetic Integration Testing](#26-hermetic-integration-testing)
-- [27. Final Verification & Audit Results](#27-final-verification--audit-results)
-- [28. Production Engineering Capabilities Matrix](#28-production-engineering-capabilities-matrix)
-- [29. Repository Structure](#29-repository-structure)
-- [30. Installation & Quickstart](#30-installation--quickstart)
-- [31. Unified Execution with tasks.py](#31-unified-execution-with-taskspy)
-- [32. Temporary Public Demo Setup (ngrok)](#32-temporary-public-demo-setup-ngrok)
-- [33. Known Limitations & Trade-Offs](#33-known-limitations--trade-offs)
-- [34. Future Cloud Productionization Roadmap](#34-future-cloud-productionization-roadmap)
-- [35. Cost Philosophy & Verification](#35-cost-philosophy--verification)
-- [36. Documentation Links](#36-documentation-links)
-- [37. Author](#37-author)
-- [38. License](#38-license)
-- [39. Summary](#39-summary)
-
----
-
-## 1. Project Positioning & Scope
+## Project Positioning & Scope
 
 The **Telco Customer Churn MLOps Platform** is an **End-to-End MLOps Platform — Portfolio / Interview / Local-Demo Ready**. It is built to demonstrate how real-world machine learning systems operate as robust, versioned, observable, and testable software engineering platforms.
 
@@ -94,7 +50,7 @@ This repository deliberately implements **production-oriented software design pa
 
 ---
 
-## 2. Problem Statement
+## Problem Statement & Business Reality
 
 ### The Business Reality
 Customer churn is one of the highest cost drivers in the telecommunications industry. Acquiring a new customer costs 5 to 7 times more than retaining an existing one. Early detection of churn risk allows retention teams to intervene with targeted promotions, contract adjustments, or proactive customer support.
@@ -111,7 +67,7 @@ This project treats machine learning as a **disciplined software engineering sys
 
 ---
 
-## 3. What Makes This Project Different
+## What Makes This Platform Different
 
 ```
 Traditional "Notebook" ML:
@@ -149,7 +105,7 @@ Data Lineage (DVC + SHA-256)
 
 ---
 
-## 4. Project Objectives
+## Project Objectives
 
 1. **Deterministic Reproducibility**: Guarantee identical data splits, feature transformations, hyperparameter ranking, and evaluation metrics using fixed random seeds and strict schema enforcement.
 2. **Zero-Leakage Feature Engineering**: Enforce that feature imputers and derived encoders are fit strictly on training splits and serialized alongside the model.
@@ -161,7 +117,7 @@ Data Lineage (DVC + SHA-256)
 
 ---
 
-## 5. Solution Overview
+## Solution Overview
 
 The platform consists of seven interconnected software subsystems:
 - **Data Ingestion & Integrity**: Fetches raw data, validates SHA-256 checksums, and tracks state using DVC.
@@ -174,7 +130,7 @@ The platform consists of seven interconnected software subsystems:
 
 ---
 
-## 6. High-Level Architecture
+## High-Level Architecture
 
 ```mermaid
 flowchart TD
@@ -233,42 +189,42 @@ flowchart TD
 
 ---
 
-## 7. Detailed System Architecture
+## Detailed System Architecture
 
-### 7.1 Data Layer
+### Data Layer
 - **Ingestion (`src/data/ingestion.py`)**: Fetches raw data from remote or local storage, validates SHA-256 checksums to guarantee uncorrupted inputs, and tracks datasets via DVC (`.dvc`).
 - **Validation (`src/data/validation.py`)**: Validates 21 raw columns against strict type schemas, verifies categorical allowable sets, flags whitespace anomalies in `TotalCharges`, and generates structured JSON validation reports.
 - **Feature Engineering (`src/data/features.py`)**: Scikit-Learn `ColumnTransformer` containing custom imputers and derived feature transformers (`charge_ratio`, `tenure_years`, `is_monthly_contract`, `has_internet`). Fitted strictly on training data (`X_train`) to prevent data leakage and serialized to `models/feature_pipeline.joblib`.
 
-### 7.2 ML Layer
+### ML Layer
 - **Training (`src/training/train.py`)**: Deterministic training using 5-fold Stratified Cross-Validation across candidate algorithms (XGBoost Classifier and Logistic Regression) with `RandomizedSearchCV` (`random_state=42`).
 - **Evaluation (`src/training/evaluate.py`)**: Generates classification reports, confusion matrices, ROC-AUC curves, Precision-Recall curves, Brier score calibration curves, and feature importance rankings.
 
-### 7.3 Model Governance Layer
+### Model Governance Layer
 - **MLflow Tracking & Registry (`src/training/promotion.py`)**: SQLite-backed registry (`sqlite:///mlflow.db`) and local artifact store (`mlruns/`). Models are logged with complete parameters, metrics, feature schema, and dataset hash tags.
 - **Automated Promotion Policy**: Evaluates candidate models against incumbent production models using deterministic promotion criteria before updating registry stages (`Staging` $\to$ `Production` $\to$ `Archived`).
 
-### 7.4 Serving Layer
+### Serving Layer
 - **FastAPI Application (`src/api/`)**: High-performance asynchronous REST API (`src/api/app.py`, `routes.py`, `schemas.py`) validating incoming requests with Pydantic v2.
 - **Security & Middleware (`src/api/security.py`)**: Validates incoming `X-API-Key` headers against hashed secret lists, enforces SlowAPI client rate limits (60 req/min), and emits non-PII structured JSON logs.
 
-### 7.5 Infrastructure Layer
+### Infrastructure Layer
 - **Containerization (`Dockerfile`, `docker-compose.yml`)**: Multi-stage Docker build producing an optimized runtime image executing under an unprivileged `appuser` (UID 10001).
 - **Orchestration (`infra/k8s/`)**: Declarative Kubernetes manifests for Minikube including `Deployment`, `Service` (NodePort), `ConfigMap`, `Secret`, Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`), Horizontal Pod Autoscaler (`hpa.yaml`), and Pod Disruption Budget (`pdb.yaml`).
 - **Cloud Registry Integration (`infra/aws/`)**: Automated PowerShell deployment scripts (`create_ecr_repo.ps1`, `push_to_ecr.ps1`) pushing immutable tags to AWS Elastic Container Registry.
 
-### 7.6 Observability Layer
+### Observability Layer
 - **Prometheus Telemetry (`src/api/metrics.py`, `infra/monitoring/`)**: Custom Prometheus metrics exporter tracking prediction counts (`telco_predictions_total`), latency histograms (`telco_request_duration_seconds`), error counters, and drift gauges.
 - **Grafana Visualization (`infra/monitoring/grafana-dashboard.json`)**: Pre-provisioned Grafana dashboard visualizing API health, model version info, latency percentiles (p50, p95), memory/CPU utilization, and drift scores.
 
-### 7.7 Feedback & Retraining Layer
+### Feedback & Retraining Layer
 - **Drift Detection (`src/monitoring/drift.py`)**: Computes Population Stability Index (PSI) and Wasserstein distance on numerical/categorical features against baseline data using Evidently AI.
 - **Windowed State Machine (`src/monitoring/state.py`)**: Tracks drift across persistent state (`reports/monitoring_state.json`), requiring **3 consecutive drifted windows** before triggering retraining.
 - **Webhook Trigger (`src/monitoring/jenkins_trigger.py`)**: Sends authenticated REST requests to Jenkins to initiate automated retraining jobs.
 
 ---
 
-## 8. End-to-End System Flow
+## End-to-End System Flow
 
 ```mermaid
 flowchart TD
@@ -306,7 +262,7 @@ flowchart TD
 
 ---
 
-## 9. Problem → Technology → Solution Mapping
+## Problem → Technology → Solution Mapping
 
 | Engineering Problem | Technology | Why It Was Chosen | How It Solves the Problem |
 | :--- | :--- | :--- | :--- |
@@ -330,7 +286,7 @@ flowchart TD
 
 ---
 
-## 10. Technology Stack
+## Technology Stack
 
 ```
 Languages:        Python 3.12, Bash, PowerShell, Groovy
@@ -347,7 +303,7 @@ Quality & Tests:  Pytest, Pytest-Cov, Flake8, Black, isort, mypy
 
 ---
 
-## 11. Dataset
+## Dataset
 
 The project uses the standard **IBM Telco Customer Churn** dataset:
 - **Total Records**: 7,043 customer accounts
@@ -365,7 +321,7 @@ The project uses the standard **IBM Telco Customer Churn** dataset:
 
 ---
 
-## 12. Data Pipeline & Lineage
+## Data Pipeline & Lineage
 
 ```
 Raw Data Ingestion ──> SHA-256 Checksum ──> DVC Tracking ──> Schema Validation ──> Stratified Split (80/20) ──> Train-Only Fitted Pipeline
@@ -380,7 +336,7 @@ Raw Data Ingestion ──> SHA-256 Checksum ──> DVC Tracking ──> Schema 
 
 ---
 
-## 13. Feature Engineering & Schema Enforcement
+## Feature Engineering & Schema Enforcement
 
 The feature engineering pipeline transforms raw records into a fixed **49-feature numerical matrix**:
 
@@ -396,7 +352,7 @@ The feature engineering pipeline transforms raw records into a fixed **49-featur
 
 ---
 
-## 14. Deterministic Model Training
+## Deterministic Model Training
 
 Deterministic training is executed via `src/training/train.py`:
 - **Cross-Validation**: 5-fold `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
@@ -408,7 +364,7 @@ Deterministic training is executed via `src/training/train.py`:
 
 ---
 
-## 15. Verified Model Results
+## Verified Model Results
 
 The following metrics represent the **verified model evaluation and benchmarking results**:
 
@@ -449,7 +405,7 @@ The following metrics represent the **verified model evaluation and benchmarking
 
 ---
 
-## 16. Decision Threshold Optimization
+## Decision Threshold Optimization
 
 In telecommunication churn prediction, false negatives (missing a churning customer) are significantly more costly than false positives (proactively offering a discount or outreach to a retained customer).
 
@@ -463,7 +419,7 @@ In telecommunication churn prediction, false negatives (missing a churning custo
 
 ---
 
-## 17. MLflow Governance & Promotion Policy
+## MLflow Governance & Promotion Policy
 
 Model tracking and promotion are governed through `src/training/promotion.py` and `sqlite:///mlflow.db`:
 
@@ -482,7 +438,7 @@ When the model registry is empty (initial deployment), Version 1 is automaticall
 
 ---
 
-## 18. FastAPI Prediction Service & Security
+## FastAPI Prediction Service & Security
 
 The inference service (`src/api/app.py`) provides high-performance prediction serving:
 
@@ -536,7 +492,7 @@ curl -X POST http://localhost:8000/predict \
 
 ---
 
-## 19. Docker Multi-Stage Containerization
+## Docker Multi-Stage Containerization
 
 The container image is built via a hardened multi-stage `Dockerfile`:
 
@@ -549,7 +505,7 @@ The container image is built via a hardened multi-stage `Dockerfile`:
 
 ---
 
-## 20. Kubernetes Orchestration on Minikube
+## Kubernetes Orchestration on Minikube
 
 Deploys on a local single-node **Minikube** cluster using declarative manifests in `infra/k8s/`:
 
@@ -587,7 +543,7 @@ Deploys on a local single-node **Minikube** cluster using declarative manifests 
 
 ---
 
-## 21. Jenkins CI/CD Automation Pipeline
+## Jenkins CI/CD Automation Pipeline
 
 The continuous integration and deployment lifecycle is automated through a declarative `Jenkinsfile` running in a containerized Jenkins environment:
 
@@ -608,7 +564,7 @@ The continuous integration and deployment lifecycle is automated through a decla
 
 ---
 
-## 22. Telemetry & Observability (Prometheus & Grafana)
+## Telemetry & Observability (Prometheus & Grafana)
 
 The platform instruments both operational and machine learning telemetry:
 
@@ -630,7 +586,7 @@ The platform instruments both operational and machine learning telemetry:
 
 ---
 
-## 23. Statistical Drift Detection (Evidently AI)
+## Statistical Drift Detection (Evidently AI)
 
 Data drift monitoring is executed via `src/monitoring/drift.py` using **Evidently AI**:
 - **Drift Metrics**: Population Stability Index (PSI) for categorical features and Wasserstein distance for continuous features.
@@ -639,7 +595,7 @@ Data drift monitoring is executed via `src/monitoring/drift.py` using **Evidentl
 
 ---
 
-## 24. Closed-Loop Automated Retraining
+## Closed-Loop Automated Retraining
 
 ```
 Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger ──> Retraining Pipeline ──> Promotion Gate ──> Conditional Rollout
@@ -656,7 +612,7 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
 
 ---
 
-## 25. Security & Fail-Fast Safety Mechanisms
+## Security & Fail-Fast Safety Mechanisms
 
 ### System Design Rationale:
 - **Data Lineage & Checksums**: Every raw dataset is verified against SHA-256 hashes and tracked with DVC to guarantee that corrupted or modified data cannot enter downstream training.
@@ -674,7 +630,7 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
 
 ---
 
-## 26. Hermetic Integration Testing
+## Hermetic Integration Testing
 
 The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) verifies all 11 lifecycle stages in an isolated temporary workspace:
 
@@ -687,7 +643,7 @@ The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) v
 
 ---
 
-## 27. Final Verification & Audit Results
+## Final Verification & Audit Results
 
 Following a comprehensive end-to-end engineering audit, the platform is verified in a clean, fully passing operational state:
 
@@ -701,7 +657,7 @@ Following a comprehensive end-to-end engineering audit, the platform is verified
 
 ---
 
-## 28. Production Engineering Capabilities Matrix
+## Production Engineering Capabilities Matrix
 
 | Architectural Layer | Core Technology & Implementation | Production Verification |
 | :--- | :--- | :---: |
@@ -724,7 +680,7 @@ Following a comprehensive end-to-end engineering audit, the platform is verified
 
 ---
 
-## 29. Repository Structure
+## Repository Structure
 
 ```
 ├── .dockerignore
@@ -800,7 +756,7 @@ Following a comprehensive end-to-end engineering audit, the platform is verified
 
 ---
 
-## 30. Installation & Quickstart
+## Installation & Quickstart
 
 ### Prerequisites:
 - Python 3.12+
@@ -837,7 +793,7 @@ Copy-Item .env.example .env
 
 ---
 
-## 31. Unified Execution with tasks.py & Streamlit
+## Unified Execution with tasks.py & Streamlit
 
 All lifecycle operations are driven by a cross-platform Python task runner (`tasks.py`), avoiding OS-specific Makefile dependencies:
 
@@ -913,40 +869,7 @@ kubectl apply -f infra/k8s/grafana-service.yaml
 
 ---
 
-## 32. Temporary Public Demo Setup (ngrok)
-
-You can expose the local Grafana dashboard or FastAPI service externally for a live demonstration using an **ngrok** tunnel.
-
-> [!IMPORTANT]
-> **Temporary Local Demo vs Cloud Hosting**: An ngrok tunnel is an ephemeral development bridge to your local computer. The public URL is temporary and active **only** while:
-> - Your local machine remains powered ON.
-> - Minikube remains running.
-> - The `kubectl port-forward` process remains active.
-> - The `ngrok` process remains active.
-> This is a demonstration tunnel, not a 24/7 cloud deployment.
-
-### How to Start the Public Demo:
-
-1. **Start Minikube**:
-   ```powershell
-   minikube start
-   ```
-
-2. **Forward Grafana Port (Terminal 1)**:
-   ```powershell
-   kubectl port-forward svc/grafana 3000:3000
-   ```
-
-3. **Start ngrok Tunnel (Terminal 2)**:
-   ```powershell
-   ngrok http 3000
-   ```
-
-4. **Access Dashboard**: Open the forwarding URL displayed in your ngrok terminal (e.g., `https://<random-id>.ngrok-free.dev/d/telco-churn-telemetry`).
-
----
-
-## 33. Known Limitations & Trade-Offs
+## Known Limitations & Trade-Offs
 
 In the spirit of engineering transparency, the following constraints reflect the local single-node architecture:
 1. **Single-Node Minikube Runtime**: Employs `hostPath` persistent volumes on local disk. Cloud-native failover, multi-AZ replication, and managed EBS/EFS CSI drivers are not present in this local runtime.
@@ -959,7 +882,7 @@ In the spirit of engineering transparency, the following constraints reflect the
 
 ---
 
-## 34. Future Cloud Productionization Roadmap
+## Target Enterprise Cloud Architecture
 
 The following architecture represents the target design for migrating this local platform to a fully managed cloud enterprise environment:
 
@@ -983,41 +906,15 @@ The following architecture represents the target design for migrating this local
 
 ---
 
-## 35. Cost Philosophy & Verification
-
-This project was intentionally engineered with a **zero-recurring-cloud-cost philosophy**:
-- **Local Infrastructure**: Compute, containerization, orchestration, telemetry, and CI/CD run locally on Docker, Minikube, and Jenkins.
-- **AWS ECR Integration**: Cloud integration was scoped to AWS Elastic Container Registry (`telco-churn-api`), incurring negligible storage costs during push verification.
-- **Clean Teardown**: Full verification of AWS resource lifecycle and cost transparency is documented in [`docs/COST_REPORT.md`](docs/COST_REPORT.md) and [`docs/TEARDOWN_GUIDE.md`](docs/TEARDOWN_GUIDE.md).
-
----
-
-## 36. Documentation Links
-
-- **System Architecture Diagram**: [`docs/diagrams/architecture.md`](docs/diagrams/architecture.md)
-- **Closed-Loop Retraining Sequence**: [`docs/diagrams/sequence.md`](docs/diagrams/sequence.md)
-- **Architecture Decision Records (ADRs)**: [`docs/adr/README.md`](docs/adr/README.md)
-- **Final Human Acceptance Report**: [`docs/FINAL_ACCEPTANCE_REPORT.md`](docs/FINAL_ACCEPTANCE_REPORT.md)
-- **Cloud Financial Cost Report**: [`docs/COST_REPORT.md`](docs/COST_REPORT.md)
-- **Infrastructure Teardown Guide**: [`docs/TEARDOWN_GUIDE.md`](docs/TEARDOWN_GUIDE.md)
-- **Interactive Live Web Demo**: [telco-churn-mlops.streamlit.app](https://telco-churn-mlops.streamlit.app/)
-
----
-
-## 37. Author
+## Author & Contact
 
 **Aakash S. S.**
 - **Email**: [aakash1552005@gmail.com](mailto:aakash1552005@gmail.com)
 - **GitHub**: [@aakash1552005](https://github.com/aakash1552005)
+- **Live Demo**: [telco-churn-mlops.streamlit.app](https://telco-churn-mlops.streamlit.app/)
 
 ---
 
-## 38. License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-## 39. Summary
-
-> *"This project demonstrates not only how to train a machine learning model, but how to govern, serve, observe, validate, and safely evolve an ML software system in production."*
