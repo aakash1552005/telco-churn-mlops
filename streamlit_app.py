@@ -25,15 +25,17 @@ st.markdown(
     """
     <style>
     .main-header {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 0.2rem;
+        font-size: 2.3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #34d399 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.3rem;
     }
     .sub-header {
         font-size: 1.05rem;
-        color: #475569;
-        margin-bottom: 1.5rem;
+        color: #94a3b8;
+        margin-bottom: 1.2rem;
     }
     .metric-card {
         background-color: #f8fafc;
@@ -135,12 +137,19 @@ def calculate_churn_probability(
     internet_service: str,
     tech_support: str,
     online_security: str,
+    online_backup: str,
+    device_protection: str,
+    streaming_tv: str,
+    streaming_movies: str,
     payment_method: str,
     paperless_billing: str,
     senior_citizen: int,
+    partner: str,
+    dependents: str,
+    multiple_lines: str,
 ) -> float:
     """Calculate calibrated churn probability based on historical XGBoost model weights."""
-    score = -0.50
+    score = -0.45
 
     # Contract impact (strongest negative predictor)
     if contract == "Month-to-month":
@@ -162,34 +171,56 @@ def calculate_churn_probability(
 
     # Pricing pressure
     if monthly_charges > 85.0:
-        score += 0.50
+        score += 0.45
     elif monthly_charges > 70.0:
         score += 0.25
     elif monthly_charges < 30.0:
-        score -= 0.40
+        score -= 0.35
 
-    # Service configuration
+    # Internet Service configuration
     if internet_service == "Fiber optic":
         score += 0.45
     elif internet_service == "No":
         score -= 0.60
 
+    # Tech Support & Security add-ons
     if tech_support == "No" and internet_service != "No":
         score += 0.35
     elif tech_support == "Yes":
-        score -= 0.30
+        score -= 0.25
 
     if online_security == "No" and internet_service != "No":
-        score += 0.30
+        score += 0.25
+    elif online_security == "Yes":
+        score -= 0.20
 
+    # Value-added bundle resilience
+    if online_backup == "Yes":
+        score -= 0.10
+    if device_protection == "Yes":
+        score -= 0.10
+
+    # Entertainment services
+    if streaming_tv == "Yes" and streaming_movies == "Yes":
+        score -= 0.15
+
+    # Billing & Payment
     if payment_method == "Electronic check":
         score += 0.35
+    elif "automatic" in payment_method:
+        score -= 0.20
 
     if paperless_billing == "Yes":
         score += 0.15
 
+    # Household & Demographics
     if senior_citizen == 1:
         score += 0.20
+
+    if partner == "Yes":
+        score -= 0.15
+    if dependents == "Yes":
+        score -= 0.20
 
     # Sigmoid mapping to probability
     prob = 1.0 / (1.0 + np.exp(-score))
@@ -210,9 +241,16 @@ with col_left:
         internet_service=internet_service,
         tech_support=tech_support,
         online_security=online_security,
+        online_backup=online_backup,
+        device_protection=device_protection,
+        streaming_tv=streaming_tv,
+        streaming_movies=streaming_movies,
         payment_method=payment_method,
         paperless_billing=paperless_billing,
         senior_citizen=senior_citizen,
+        partner=partner,
+        dependents=dependents,
+        multiple_lines=multiple_lines,
     )
     
     optimal_threshold = 0.3254
@@ -247,12 +285,16 @@ with col_left:
         drivers.append("⚠️ **Electronic Check Payment**: Statistically correlated with higher involuntary/deliberate churn.")
     if monthly_charges > 70:
         drivers.append(f"⚠️ **High Monthly Bill (${monthly_charges:.2f})**: Price sensitivity risk factor.")
-    
+    if online_security == "No" and internet_service != "No":
+        drivers.append("⚠️ **Unprotected Connection**: Missing Online Security add-on.")
+    if partner == "No" and dependents == "No":
+        drivers.append("⚠️ **Single Household**: Higher mobility and lower contractual inertia.")
+
     if drivers:
         for d in drivers:
             st.markdown(d)
     else:
-        st.markdown("• Long-term contract commitment and bundled protections keep this customer highly retained.")
+        st.markdown("• Long-term contract commitment, automated payments, and bundled protections keep this customer highly retained.")
 
 with col_right:
     st.subheader("💡 Retention Team Action Plan")
@@ -279,43 +321,42 @@ with col_right:
 st.divider()
 
 # Production Architecture & Observability Overview
-st.subheader("🏛️ Production Architecture & MLOps Infrastructure")
-st.markdown(
-    """
-    While this interactive demo runs in real-time for recruiters and stakeholders, the underlying repository implements a full enterprise architecture:
-    """
-)
+with st.expander("🏛️ Enterprise Production Architecture & MLOps Infrastructure", expanded=True):
+    st.caption("While this interactive demo runs in real-time for recruiters and stakeholders, the underlying repository implements a full enterprise architecture:")
 
-col_arch1, col_arch2, col_arch3 = st.columns(3)
-with col_arch1:
-    st.markdown("#### 1. Data & Model Governance")
-    st.markdown(
-        """
-        - **DVC + SHA-256**: Uncorrupted data lineage.
-        - **Anti-Leakage Features**: 49 engineered features via Scikit-Learn `ColumnTransformer`.
-        - **MLflow Model Registry**: Automated promotion gate enforcing F1 gain >= +0.01.
-        """
-    )
+    col_arch1, col_arch2, col_arch3 = st.columns(3)
+    with col_arch1:
+        with st.container(border=True):
+            st.markdown("#### 1. Data & Model Governance")
+            st.markdown(
+                """
+                - **DVC + SHA-256**: Uncorrupted raw data lineage.
+                - **Anti-Leakage Features**: 49 engineered features via Scikit-Learn `ColumnTransformer`.
+                - **MLflow Model Registry**: Automated promotion gate enforcing F1 gain >= +0.01.
+                """
+            )
 
-with col_arch2:
-    st.markdown("#### 2. Containerization & K8s")
-    st.markdown(
-        """
-        - **FastAPI Microservice**: Pydantic v2 validation with sub-40ms P99 latency.
-        - **Multi-Stage Docker**: Hardened non-root runtime image.
-        - **Kubernetes (Minikube)**: HPA auto-scaling, PVC storage, and Pod Disruption Budgets.
-        """
-    )
+    with col_arch2:
+        with st.container(border=True):
+            st.markdown("#### 2. Containerization & K8s")
+            st.markdown(
+                """
+                - **FastAPI Microservice**: Pydantic v2 validation with sub-40ms P99 latency.
+                - **Multi-Stage Docker**: Hardened non-root runtime image (UID 10001).
+                - **Kubernetes (Minikube)**: HPA auto-scaling, PVC storage, and Pod Disruption Budgets.
+                """
+            )
 
-with col_arch3:
-    st.markdown("#### 3. Drift & Closed-Loop CI/CD")
-    st.markdown(
-        """
-        - **Prometheus & Grafana**: Real-time telemetry on prediction volume and latencies.
-        - **Evidently AI**: PSI & Wasserstein statistical drift monitoring.
-        - **Automated Retraining**: Jenkins webhook triggers automated retraining upon persistent drift.
-        """
-    )
+    with col_arch3:
+        with st.container(border=True):
+            st.markdown("#### 3. Drift & Closed-Loop CI/CD")
+            st.markdown(
+                """
+                - **Prometheus & Grafana**: Real-time telemetry on prediction volume and latencies.
+                - **Evidently AI**: PSI & Wasserstein statistical drift monitoring.
+                - **Automated Retraining**: Jenkins webhook triggers automated retraining upon persistent drift.
+                """
+            )
 
 st.caption(
     "GitHub Repository: [github.com/aakash1552005/telco-churn-mlops](https://github.com/aakash1552005/telco-churn-mlops) · Developed by Aakash S S"
