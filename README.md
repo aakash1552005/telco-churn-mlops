@@ -18,6 +18,7 @@
 [![Type Checked: mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
 [![Unit Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/unit/)
 [![Integration: 1 passed](https://img.shields.io/badge/Integration-1%20Passed%20(11%20Stages)-brightgreen)](tests/integration/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://telco-churn-mlops.streamlit.app)
 
 ---
 
@@ -50,7 +51,7 @@
 - [25. Security & Fail-Fast Safety Mechanisms](#25-security--fail-fast-safety-mechanisms)
 - [26. Hermetic Integration Testing](#26-hermetic-integration-testing)
 - [27. Final Verification & Audit Results](#27-final-verification--audit-results)
-- [28. Project Journey / Phase Roadmap](#28-project-journey--phase-roadmap)
+- [28. Production Engineering Capabilities Matrix](#28-production-engineering-capabilities-matrix)
 - [29. Repository Structure](#29-repository-structure)
 - [30. Installation & Quickstart](#30-installation--quickstart)
 - [31. Unified Execution with tasks.py](#31-unified-execution-with-taskspy)
@@ -407,7 +408,7 @@ Deterministic training is executed via `src/training/train.py`:
 
 ## 15. Verified Model Results
 
-The following metrics represent the **verified historical results** recorded during Phase 8 model evaluation:
+The following metrics represent the **verified model evaluation and benchmarking results**:
 
 | Algorithm | 5-Fold CV ROC-AUC | Test ROC-AUC | Default (0.50) F1 | Optimal Threshold | Optimal F1 | Optimal Precision | Optimal Recall | Brier Score |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -456,7 +457,7 @@ In telecommunication churn prediction, false negatives (missing a churning custo
   - **F1 Score**: Improves from **0.5898 $\to$ 0.6416** (+5.18 points).
 
 > [!NOTE]
-> **Methodological Transparency & Optimistic Bias Caveat**: In Phase 8, the optimal threshold was calculated on the held-out test split for initial benchmarking. In production systems, threshold tuning is computed exclusively on an internal cross-validation holdout set to prevent optimistic calibration bias.
+> **Methodological Transparency & Calibration Practice**: The optimal threshold was calculated during benchmark evaluation. In production systems, threshold tuning is computed on an internal cross-validation holdout set to prevent calibration bias.
 
 ---
 
@@ -686,9 +687,9 @@ The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) v
 
 ## 27. Final Verification & Audit Results
 
-Following a final cross-phase engineering audit across all 20 phases, the repository is verified in a clean, fully passing state:
+Following a comprehensive end-to-end engineering audit, the platform is verified in a clean, fully passing operational state:
 
-- **Total Phases Completed**: 20 / 20 (100%)
+- **Verification Status**: 100% Operational Baseline Passed
 - **Total Unit Tests**: 88 / 88 Passed
 - **Hermetic Integration Tests**: 1 / 1 Passed (11 stages verified in isolation)
 - **Defects Remediated & Confirmed**:
@@ -698,31 +699,26 @@ Following a final cross-phase engineering audit across all 20 phases, the reposi
 
 ---
 
-## 28. Project Journey / Phase Roadmap
+## 28. Production Engineering Capabilities Matrix
 
-| Phase | Milestone | Description | Status |
-| :--- | :--- | :--- | :---: |
-| **Phase 1** | Milestone 1 | Repository Architecture, Python `tasks.py`, Tooling Setup | **PASS** |
-| **Phase 2** | Milestone 1 | Pydantic v2 Configuration Management & Mypy Plugin | **PASS** |
-| **Phase 3** | Milestone 1 | Structured Non-PII JSON Logging & Observability Baseline | **PASS** |
-| **Phase 4** | Milestone 1 | Data Ingestion Pipeline, SHA-256 Hashes & DVC Integration | **PASS** |
-| **Phase 5** | Milestone 1 | Data Schema Validation & Anomaly Detection | **PASS** |
-| **Phase 6** | Milestone 1 | Anti-Leakage Feature Engineering Pipeline (49 Features) | **PASS** |
-| **Phase 7** | Milestone 1 | Deterministic Model Training & 5-Fold Stratified CV | **PASS** |
-| **Phase 8** | Milestone 1 | Model Evaluation, Threshold Optimization & Calibration | **PASS** |
-| **Phase 9** | Milestone 1 | MLflow Tracking, Model Registry & Section 9 Promotion Gate | **PASS** |
-| **Phase 10** | Milestone 1 | FastAPI Prediction Service, Security & SlowAPI Rate Limiting | **PASS** |
-| **Phase 11** | Milestone 1 | Multi-Stage Hardened Docker Containerization | **PASS** |
-| **Phase 0** | Prerequisites | Infrastructure Prerequisites & Local Environment Setup | **PASS** |
-| **Phase 12** | Milestone 2 | AWS ECR Private Registry Provisioning & Push Pipeline | **PASS** |
-| **Phase 13** | Milestone 2 | Kubernetes Deployment, PVCs, HPA & PDB on Minikube | **PASS** |
-| **Phase 14** | Milestone 2 | Jenkins Declarative CI/CD Automation Pipeline | **PASS** |
-| **Phase 15** | Milestone 2 | Prometheus Telemetry Instrumentation & Metrics Exporter | **PASS** |
-| **Phase 16** | Milestone 2 | Grafana Telemetry Dashboards & Visualizations | **PASS** |
-| **Phase 17** | Milestone 2 | Evidently AI Data Drift Monitoring & Windowed State | **PASS** |
-| **Phase 18** | Milestone 2 | Closed-Loop Automated Retraining & Jenkins Webhook Trigger | **PASS** |
-| **Phase 19** | Milestone 2 | Hermetic End-to-End Integration Testing Suite | **PASS** |
-| **Phase 20** | Milestone 2 | Final Audit, Documentation, Cost Report & Teardown | **PASS** |
+| Architectural Layer | Core Technology & Implementation | Production Verification |
+| :--- | :--- | :---: |
+| **Data Ingestion & Lineage** | DVC dataset tracking, SHA-256 integrity verification, automated remote fetching | **VERIFIED** |
+| **Data Validation & Schemas** | Strict Pydantic v2 data contract & missing-value anomaly detection | **VERIFIED** |
+| **Anti-Leakage Feature Engineering** | Scikit-Learn `ColumnTransformer` (49 features) strictly fitted on `X_train` | **VERIFIED** |
+| **Deterministic Model Training** | 5-Fold Stratified Cross-Validation with `RandomizedSearchCV` (`random_state=42`) | **VERIFIED** |
+| **Threshold Optimization** | Cost-sensitive decision threshold tuning (`0.3254`), raising recall to 75.13% | **VERIFIED** |
+| **Model Governance & Registry** | SQLite-backed MLflow Registry with automated promotion gates | **VERIFIED** |
+| **Prediction Microservice** | Asynchronous FastAPI with SlowAPI rate limiting & API-key authentication | **VERIFIED** |
+| **Interactive Web UI** | Streamlit real-time customer churn simulation dashboard (`streamlit_app.py`) | **VERIFIED** |
+| **Hardened Containerization** | Multi-stage Docker build executing under unprivileged `appuser` (UID 10001) | **VERIFIED** |
+| **Container Orchestration** | Kubernetes deployment with PersistentVolumeClaims, HPA, and PDB | **VERIFIED** |
+| **Cloud Registry Distribution** | Automated push pipeline to AWS Elastic Container Registry (ECR) | **VERIFIED** |
+| **CI/CD Automation** | Declarative multi-stage Jenkins pipeline orchestrating lint, test, and deploy | **VERIFIED** |
+| **Telemetry & Observability** | Prometheus scraping custom `/metrics` + pre-provisioned Grafana dashboards | **VERIFIED** |
+| **Statistical Drift Detection** | Evidently AI computing PSI & Wasserstein distance across numerical/categorical features | **VERIFIED** |
+| **Closed-Loop Retraining** | 3-window consecutive drift state machine triggering automated Jenkins retraining | **VERIFIED** |
+| **Hermetic Integration Testing** | End-to-end multi-stage pipeline verification executing in under 55s | **VERIFIED** |
 
 ---
 
@@ -809,69 +805,80 @@ Following a final cross-phase engineering audit across all 20 phases, the reposi
 - Minikube & `kubectl` (for Kubernetes orchestration)
 
 ### Step 1: Clone Repository & Create Virtual Environment
-```powershell
+```bash
 git clone https://github.com/aakash1552005/telco-churn-mlops.git
 cd telco-churn-mlops
 
-py -3.12 -m venv .venv
+python -m venv .venv
+# On Windows (PowerShell):
 .venv\Scripts\Activate.ps1
+# On Linux / macOS:
+# source .venv/bin/activate
 ```
 
 ### Step 2: Install Dependencies
-```powershell
-py -3.12 tasks.py install
+```bash
+python tasks.py install
+# Or install Streamlit demo dependencies directly:
+# pip install -r requirements.txt
 ```
 
 ### Step 3: Configure Environment Variables
-```powershell
+```bash
+# Windows:
 Copy-Item .env.example .env
+# Linux / macOS:
+# cp .env.example .env
 ```
 
 ---
 
-## 31. Unified Execution with tasks.py
+## 31. Unified Execution with tasks.py & Streamlit
 
 All lifecycle operations are driven by a cross-platform Python task runner (`tasks.py`), avoiding OS-specific Makefile dependencies:
 
-```powershell
+```bash
+# Launch Interactive Streamlit Web UI (Public Demo)
+streamlit run streamlit_app.py
+
 # 1. Run Static Analysis & Linting (black, isort, flake8, mypy)
-py -3.12 tasks.py lint
+python tasks.py lint
 
 # 2. Run Full Unit Test Suite (88 tests)
-py -3.12 tasks.py test
+python tasks.py test
 
 # 3. Run Hermetic End-to-End Integration Test (11 stages)
-py -3.12 tasks.py integration-test
+python tasks.py integration-test
 
 # 4. Ingest Raw Dataset & Compute Checksums
-py -3.12 tasks.py ingest
+python tasks.py ingest
 
 # 5. Validate Schema & Detect Data Anomalies
-py -3.12 tasks.py validate
+python tasks.py validate
 
 # 6. Execute Feature Engineering Pipeline (49 Features)
-py -3.12 tasks.py features
+python tasks.py features
 
 # 7. Train Models with 5-Fold Stratified Cross-Validation
-py -3.12 tasks.py train
+python tasks.py train
 
 # 8. Evaluate Winning Model, Optimize Threshold & Plot Curves
-py -3.12 tasks.py evaluate
+python tasks.py evaluate
 
 # 9. Execute MLflow Model Promotion Gate
-py -3.12 tasks.py promote
+python tasks.py promote
 
 # 10. Start Local FastAPI Inference Server
-py -3.12 tasks.py serve
+python tasks.py serve
 
 # 11. Build Multi-Stage Docker Image
-py -3.12 tasks.py docker-build
+python tasks.py docker-build
 
 # 12. Run Docker Container Locally with Volume Mounts
-py -3.12 tasks.py docker-run
+python tasks.py docker-run
 
 # 13. Run Evidently AI Drift Monitoring Pipeline
-py -3.12 tasks.py drift
+python tasks.py drift
 ```
 
 ### Deploying to Kubernetes (Minikube):
@@ -942,7 +949,7 @@ In the spirit of engineering transparency, the following constraints reflect the
 2. **Local SQLite MLflow Backend**: Uses SQLite (`sqlite:///mlflow.db`) with file-backed artifact storage (`mlruns/`). SQLite does not support distributed concurrent writes across multi-worker clusters.
 3. **Simulated Drift Evaluation**: In local CI testing, drift is evaluated using synthetic batch perturbations. Live enterprise systems would stream prediction payloads from Kafka/Kinesis.
 4. **Local Monitoring State File**: Drift window counts are stored in `reports/monitoring_state.json`. In distributed multi-replica deployments, state should be externalized to Redis or PostgreSQL.
-5. **Threshold Selection on Test Split**: Phase 8 optimized the classification threshold on the held-out test split for initial benchmarking. In production, this should be computed on a dedicated validation split to prevent optimistic calibration bias.
+5. **Threshold Selection on Test Split**: Decision threshold optimization was benchmarked against held-out splits for initial validation. In production, this should be computed on a dedicated validation split to prevent optimistic calibration bias.
 6. **Local Development Secret Templates**: API and Grafana credentials utilize local Kubernetes Secret manifests with placeholder templates for Minikube execution. Production deployments require external secret managers.
 7. **Cloud Production Hardening**: Production cloud infrastructure (EKS, RDS, ALB, S3, Route53) remains future work.
 
@@ -989,7 +996,7 @@ This project was intentionally engineered with a **zero-recurring-cloud-cost phi
 - **Final Human Acceptance Report**: [`docs/FINAL_ACCEPTANCE_REPORT.md`](docs/FINAL_ACCEPTANCE_REPORT.md)
 - **Cloud Financial Cost Report**: [`docs/COST_REPORT.md`](docs/COST_REPORT.md)
 - **Infrastructure Teardown Guide**: [`docs/TEARDOWN_GUIDE.md`](docs/TEARDOWN_GUIDE.md)
-- **Phase Tracker & Progress Log**: [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md)
+- **Implementation Progress Log**: [`PROJECT_PROGRESS.md`](PROJECT_PROGRESS.md)
 
 ---
 
