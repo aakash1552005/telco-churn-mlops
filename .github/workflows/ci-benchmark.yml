@@ -17,6 +17,8 @@ jobs:
   test-and-benchmark:
     name: Unit Tests & Container Benchmark
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - name: Checkout repository
@@ -48,7 +50,7 @@ jobs:
 
       - name: Run Unit Test Suite
         run: |
-          pytest tests/unit/ -v
+          python -m pytest tests/unit/ -v
 
       - name: Bootstrap Production Model Artifacts
         run: |
