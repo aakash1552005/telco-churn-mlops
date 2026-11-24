@@ -1,0 +1,176 @@
+name: CI & Container Load Benchmark
+
+on:
+  push:
+    branches:
+      - main
+      - feat/container-benchmarks-cicd
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test-and-benchmark:
+    name: Unit Tests & Container Benchmark
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect Runner Hardware Environment
+        id: runner_env
+        run: |
+          RUNNER_CPUS=$(nproc)
+          RUNNER_RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+          echo "RUNNER_CPUS=$RUNNER_CPUS" >> $GITHUB_ENV
+          echo "RUNNER_RAM_MB=$RUNNER_RAM_MB" >> $GITHUB_ENV
+          echo "=== Runner Hardware Environment ==="
+          echo "Logical CPUs (nproc): $RUNNER_CPUS"
+          echo "System Memory (free -m):"
+          free -m
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,test]"
+          pip install locust
+
+      - name: Run Unit Test Suite
+        run: |
+          pytest tests/unit/ -v
+
+      - name: Bootstrap Production Model Artifacts
+        run: |
+          python scripts/bootstrap_model.py
+          # Transfer ownership of runtime bind-mount artifacts to appuser (UID 10001, GID 10001)
+          sudo chown -R 10001:10001 models mlruns mlflow.db reports || true
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit & Build Docker Image
+        id: docker_build
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/${OWNER}/telco-churn-mlops:${{ github.sha }}"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+          echo "Building multi-stage container image: $IMAGE_NAME"
+          docker build \
+            --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+            --build-arg GIT_COMMIT=${{ github.sha }} \
+            --build-arg VERSION="1.0.0" \
+            -t "$IMAGE_NAME" \
+            -t "telco-churn-api:latest" .
+
+          # Measure local uncompressed Docker image size
+          DOCKER_IMAGE_SIZE=$(docker images "$IMAGE_NAME" --format "{{.Size}}")
+          echo "DOCKER_IMAGE_SIZE=$DOCKER_IMAGE_SIZE" >> $GITHUB_ENV
+          echo "Measured Local Uncompressed Docker Image Size: $DOCKER_IMAGE_SIZE"
+
+      - name: Push Container Image to GHCR (Main Branch Only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker push "$IMAGE_NAME"
+
+      - name: Launch Containerized FastAPI Service
+        id: start_container
+        run: |
+          # Generate non-committed runtime secret API key
+          TEST_API_KEY=$(openssl rand -hex 16)
+          echo "::add-mask::$TEST_API_KEY"
+          echo "TEST_API_KEY=$TEST_API_KEY" >> $GITHUB_ENV
+
+          echo "Starting container on port 8000 with volume mounts..."
+          docker run -d \
+            --name telco-api-bench \
+            -p 8000:8000 \
+            -e ENVIRONMENT=development \
+            -e API_HOST=0.0.0.0 \
+            -e API_PORT=8000 \
+            -e API_SECRET_KEYS="[\"${TEST_API_KEY}\"]" \
+            -e MLFLOW_TRACKING_URI=sqlite:////app/mlflow.db \
+            -e MLFLOW_MODEL_NAME=telco-churn-classifier \
+            -v "$(pwd):$(pwd)" \
+            -v "$(pwd)/models:/app/models:ro" \
+            -v "$(pwd)/mlruns:/app/mlruns:ro" \
+            -v "$(pwd)/mlflow.db:/app/mlflow.db:rw" \
+            "$IMAGE_NAME"
+
+          # Wait for container readiness healthcheck
+          echo "Verifying container readiness at http://localhost:8000/health/readiness..."
+          READY=false
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8000/health/readiness > /dev/null; then
+              echo "Container is ready and healthy (attempt $i)!"
+              READY=true
+              break
+            fi
+            echo "Waiting for service readiness (attempt $i/30)..."
+            sleep 1
+          done
+
+          if [ "$READY" != "true" ]; then
+            echo "Container failed readiness check! Dumping container logs:"
+            docker logs telco-api-bench
+            exit 1
+          fi
+
+      - name: Execute Headless Locust Load Test (Warmup + 3 Runs)
+        env:
+          API_KEY: ${{ env.TEST_API_KEY }}
+        run: |
+          mkdir -p reports/load
+
+          echo "=== 1. Warm-up Phase (10s, 10 users) ==="
+          locust -f tests/load/locustfile.py --headless -u 10 -r 5 --run-time 10s --host http://localhost:8000 --exit-code-on-error 0
+
+          echo "=== 2. Load Test Run 1 (30s, 25 users) ==="
+          locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/run1 --exit-code-on-error 0
+
+          echo "=== 3. Load Test Run 2 (30s, 25 users) ==="
+          locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/run2 --exit-code-on-error 0
+
+          echo "=== 4. Load Test Run 3 (30s, 25 users) ==="
+          locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/run3 --exit-code-on-error 0
+
+      - name: Parse Load Benchmarks & Generate Job Summary
+        run: |
+          python scripts/parse_load_results.py \
+            --run1 reports/load/run1_stats.csv \
+            --run2 reports/load/run2_stats.csv \
+            --run3 reports/load/run3_stats.csv \
+            --runner-cpus "$RUNNER_CPUS" \
+            --runner-ram "$RUNNER_RAM_MB" \
+            --image-size "$DOCKER_IMAGE_SIZE" \
+            --output-json reports/load/load_test_summary.json \
+            --step-summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Benchmark Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-benchmark-results
+          path: reports/load/
+
+      - name: Teardown & Clean Container
+        if: always()
+        run: |
+          docker stop telco-api-bench || true
+          docker rm telco-api-bench || true

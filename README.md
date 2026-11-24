@@ -407,15 +407,20 @@ The following metrics represent the **verified model evaluation and benchmarking
 
 ## Decision Threshold Optimization
 
-In telecommunication churn prediction, false negatives (missing a churning customer) are significantly more costly than false positives (proactively offering a discount or outreach to a retained customer).
+In telecommunication churn prediction, false negatives (missing an actual churning customer) are significantly more costly than false positives (proactively offering a discount or retention outreach to a loyal customer).
 
-- **Default Threshold (0.50)**: Misses over **47.3%** of churning customers (Recall = 0.5267).
-- **Optimized Threshold ($\approx 0.3254$)**: Sweeps 100 threshold points along the Precision-Recall curve to maximize the operational F1 score:
-  - **Recall**: Increasing churn recall from 52.67% to 75.13% (+22.46 percentage points, +42.65% relative).
-  - **F1 Score**: Improves from **0.5898 $\to$ 0.6416** (+5.18 points).
+Evaluating the winning XGBoost classifier output directly:
+- **At Default Decision Threshold (0.50)**:
+  - **Recall**: `52.67%` (0.5267 — missing 177 churning customers)
+  - **Precision**: `67.01%` (0.6701)
+  - **F1 Score**: `0.5898`
+- **At Optimized Decision Boundary (0.3254)**:
+  - **Recall**: `75.13%` (0.7513 — identifying 281 churners, cutting missed churn from 177 to 93)
+  - **Precision**: `55.98%` (0.5598)
+  - **F1 Score**: `0.6416` (composite operational maximum)
 
-> [!NOTE]
-> **Methodological Transparency & Calibration Practice**: The optimal threshold was calculated during benchmark evaluation. In production systems, threshold tuning is computed on an internal cross-validation holdout set to prevent calibration bias.
+> [!WARNING]
+> **Data Split & Optimistic Evaluation Notice**: The `0.3254` decision threshold was selected by sweeping the Precision-Recall curve directly on the held-out **test split** (`data/processed/test.csv`). Because the threshold was optimized on the test data itself, the resulting recall (75.13%) and F1 (0.6416) may be optimistic due to threshold selection bias. In enterprise production systems, decision threshold tuning should be performed strictly on an independent validation fold or calibration split prior to final untouched test evaluation.
 
 ---
 
@@ -492,16 +497,40 @@ curl -X POST http://localhost:8000/predict \
 
 ---
 
-## Docker Multi-Stage Containerization
+## Docker Multi-Stage Containerization & Security Audit
 
-The container image is built via a hardened multi-stage `Dockerfile`:
+The container image is built via a production-hardened multi-stage `Dockerfile` audited against container security and deployment best practices:
 
-- **Stage 1 (Builder)**: Installs build dependencies and wheels in an isolated build layer.
-- **Stage 2 (Runtime)**: Minimal `python:3.12-slim` base image copying only production dependencies and source code.
-- **Security Hardening**:
-  - Runs as an unprivileged user `appuser` (UID 10001, GID 10001).
-  - Docker `HEALTHCHECK` probing `GET /health/liveness` every 30s.
-  - Image metadata tagged with OCI labels (`GIT_COMMIT`, `BUILD_DATE`, `VERSION`).
+- **Multi-Stage Architecture**:
+  - **Stage 1 (Builder)**: Pinned base `python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63`. Installs build dependencies and wheels in an isolated virtual environment (`/opt/venv`), stripping compilers and dev tooling from the final artifact.
+  - **Stage 2 (Runtime)**: Minimal runner stage copying only the compiled virtualenv and `src/` application code.
+- **Security & Privilege Isolation**:
+  - Dedicated unprivileged system user and group `appuser:appgroup` (UID `10001`, GID `10001`). Root access is dropped via `USER appuser`.
+  - Zero hardcoded secrets, keys, or credentials baked into the image. API keys and environment configurations are injected strictly at runtime via environment variables or volume mounts.
+- **OCI Metadata & Healthcheck**:
+  - Image metadata fully labeled with OpenContainers (OCI) specification tags (`GIT_COMMIT`, `BUILD_DATE`, `VERSION`).
+  - Active `HEALTHCHECK` probing `GET /health/readiness` with 10s interval, 5s timeout, and 3 retries.
+
+---
+
+## Container & Load Benchmarks (Automated CI)
+
+Continuous integration load testing is executed automatically in GitHub Actions on every pull request and push to `main` via headless [Locust](https://locust.io/):
+
+### Execution Topology & Test Conditions:
+- **Environment**: GitHub-hosted Ubuntu runner. Hardware specs are dynamically captured at runtime via `nproc` (logical vCPUs) and `free -m` (available RAM) rather than hardcoded assumptions.
+- **Resource Contention Note**: **The client (Locust) and the server (FastAPI Docker container) share the runner's CPU and memory.** Measured latencies reflect this co-located execution topology.
+- **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; measured latency numbers refer strictly to this bootstrapped candidate model, not the fully trained 0.847 ROC-AUC production model.
+- **Authentication**: Authenticated via dynamic runtime `X-API-Key` injected into container environment variables and client headers.
+- **Test Protocol**:
+  - 10-second warm-up phase (10 concurrent users).
+  - 3 consecutive 30-second benchmark runs with **25 concurrent users** (ramp rate: 5 users/sec, 0s think time). Each 30-second run includes a ~5s ramp-up.
+  - Metrics are aggregated across all 3 iterations, where the reported median is taken over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
+
+### Measured Benchmark Numbers:
+- **Runner Hardware Specifications**: *dynamically queried at runtime via `nproc` and `free -m`*
+- **Docker Image Footprint**: *local uncompressed size, measured live via `docker images` during CI build*
+- **Live Measured Benchmarks**: **benchmarks: see latest job summary** *(empirical numbers, P50/P95 latency percentiles, throughput, and error rates are captured directly from runner execution and published to the GitHub Actions Job Summary and workflow artifacts)*
 
 ---
 
