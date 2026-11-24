@@ -53,15 +53,23 @@ jobs:
           echo "=== Host Runner Key Dependency Versions ==="
           python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost|evidently)==" | sort | tee runner_deps.txt
 
+      - name: Bootstrap Production Model Artifacts
+        run: |
+          python scripts/bootstrap_model.py
+
+      - name: Pre-create Reports Directory
+        run: |
+          mkdir -p reports/load
+
       - name: Run Unit Test Suite
         run: |
           python -m pytest tests/unit/ -v
 
-      - name: Bootstrap Production Model Artifacts
+      - name: Set Runtime Ownership for Container Mounts
         run: |
-          python scripts/bootstrap_model.py
           # Transfer ownership of runtime bind-mount artifacts to appuser (UID 10001, GID 10001)
-          sudo chown -R 10001:10001 models mlruns mlflow.db reports || true
+          # Specifically models, mlruns, and mlflow.db ONLY - reports/ is owned by runner user
+          sudo chown -R 10001:10001 models mlruns mlflow.db || true
 
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -90,6 +98,9 @@ jobs:
           DOCKER_IMAGE_SIZE=$(docker images "$IMAGE_NAME" --format "{{.Size}}")
           echo "DOCKER_IMAGE_SIZE=$DOCKER_IMAGE_SIZE" >> $GITHUB_ENV
           echo "Measured Local Uncompressed Docker Image Size: $DOCKER_IMAGE_SIZE"
+
+          echo "=== Docker Image Layer Size History ==="
+          docker history "$IMAGE_NAME" --no-trunc --format "table {{.Size}}\t{{.CreatedBy}}"
 
       - name: Verify Container Dependency Parity
         run: |
@@ -150,8 +161,6 @@ jobs:
         env:
           API_KEY: ${{ env.TEST_API_KEY }}
         run: |
-          mkdir -p reports/load
-
           echo "=== 1. Warm-up Phase (10s, 10 users) ==="
           locust -f tests/load/locustfile.py --headless -u 10 -r 5 --run-time 10s --host http://localhost:8000 --exit-code-on-error 0
 

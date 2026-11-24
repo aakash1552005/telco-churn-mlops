@@ -6,6 +6,7 @@ checks, offline/online prediction consistency, and dynamic model reload round-tr
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -32,6 +33,10 @@ def ensure_production_model_loaded() -> None:
     try:
         prediction_service.load_production_model()
     except Exception as e:
+        if os.getenv("CI"):
+            pytest.fail(
+                f"CI failure: Production model must be loaded for API tests, but failed: {e}"
+            )
         pytest.skip(
             f"Skipping API tests: Production model not available in MLflow: {e}"
         )
