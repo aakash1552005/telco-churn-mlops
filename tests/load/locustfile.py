@@ -134,7 +134,7 @@ class TelcoChurnUser(HttpUser):
         ) as response:
             if response.status_code == 200:
                 data = response.json()
-                if "churn_probability" in data and "churn_prediction" in data:
+                if "probability" in data and "churn_predicted" in data:
                     response.success()
                 else:
                     response.failure(f"Missing expected keys in response: {response.text}")

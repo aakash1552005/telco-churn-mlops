@@ -15,7 +15,7 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Telemetry-E6522C?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![AWS ECR](https://img.shields.io/badge/AWS-ECR-FF9900?style=flat&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/ecr/)
-[![Unit Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/unit/)
+[![Unit Tests: 87 passed](https://img.shields.io/badge/Unit%20Tests-87%20Passed-brightgreen)](tests/unit/)
 [![Integration: 1 passed](https://img.shields.io/badge/Integration-1%20Passed%20(11%20Stages)-brightgreen)](tests/integration/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -282,7 +282,7 @@ flowchart TD
 | **Statistical Drift Detection** | **Evidently AI** | Specialized data and concept drift metrics (PSI, Wasserstein). | Quantifies distribution shift between baseline reference data and streaming prediction windows. |
 | **Drift Thrashing Prevention** | **Custom State Machine (`state.py`)** | Lightweight JSON-backed consecutive window tracker with file locks. | Prevents false-alarm retraining by requiring 3 consecutive drifted evaluation windows. |
 | **Code Quality & Static Analysis** | **Black, isort, Flake8, mypy** | Comprehensive Python formatting, style enforcement, and static typing. | Enforces PEP 8 compliance, consistent formatting, and strict type safety across all `src/` modules. |
-| **Test Automation** | **Pytest & Pytest-Cov** | Flexible testing framework with fixtures and coverage reporting. | Executes 88 unit tests and an end-to-end hermetic integration suite in under 55 seconds. |
+| **Test Automation** | **Pytest & Pytest-Cov** | Flexible testing framework with fixtures and coverage reporting. | Executes 87 unit tests and an end-to-end hermetic integration suite in under 55 seconds. |
 
 ---
 
@@ -520,7 +520,7 @@ Continuous integration load testing is executed automatically in GitHub Actions 
 ### Execution Topology & Test Conditions:
 - **Environment**: GitHub-hosted Ubuntu runner. Hardware specs are dynamically captured at runtime via `nproc` (logical vCPUs) and `free -m` (available RAM) rather than hardcoded assumptions.
 - **Resource Contention Note**: **The client (Locust) and the server (FastAPI Docker container) share the runner's CPU and memory.** Measured latencies reflect this co-located execution topology.
-- **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; measured latency numbers refer strictly to this bootstrapped candidate model, not the fully trained 0.847 ROC-AUC production model.
+- **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; it establishes its own decision threshold (e.g. 0.3486). Measured latency numbers refer strictly to this bootstrapped candidate model, whereas the optimal 0.3254 threshold, 75.13% recall, and 0.847 ROC-AUC refer to the fully trained production model.
 - **Authentication**: Authenticated via dynamic runtime `X-API-Key` injected into container environment variables and client headers.
 - **Test Protocol**:
   - 10-second warm-up phase (10 concurrent users).
@@ -580,7 +580,7 @@ The continuous integration and deployment lifecycle is automated through a decla
 | :--- | :--- | :--- |
 | **1. Checkout & Setup** | Clones repository, activates Python 3.12 environment | Environment initialized |
 | **2. Code Quality & Lint** | Runs `black --check`, `isort --check-only`, `flake8`, `mypy` | Zero style or typing errors |
-| **3. Unit Tests** | Executes full unit test suite via `pytest` | 88/88 tests pass |
+| **3. Unit Tests** | Executes full unit test suite via `pytest` | 87/87 tests pass |
 | **4. Integration Tests** | Runs isolated end-to-end pipeline in ephemeral environment | All 11 stages pass (<55s) |
 | **5. Data Validation** | Ingests data, validates schema and hashes | Validation report clean |
 | **6. Model Training** | Executes 5-fold CV across XGBoost & Logistic Regression | Produces candidate artifact |
@@ -677,7 +677,7 @@ The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) v
 Following a comprehensive end-to-end engineering audit, the platform is verified in a clean, fully passing operational state:
 
 - **Verification Status**: 100% Operational Baseline Passed
-- **Total Unit Tests**: 88 / 88 Passed
+- **Total Unit Tests**: 87 / 87 Passed
 - **Hermetic Integration Tests**: 1 / 1 Passed (11 stages verified in isolation)
 - **Defects Remediated & Confirmed**:
   1. Provenance SHA-256 workspace path isolation fixed.
@@ -833,7 +833,7 @@ streamlit run streamlit_app.py
 # 1. Run Static Analysis & Linting (black, isort, flake8, mypy)
 python tasks.py lint
 
-# 2. Run Full Unit Test Suite (88 tests)
+# 2. Run Full Unit Test Suite (87 tests)
 python tasks.py test
 
 # 3. Run Hermetic End-to-End Integration Test (11 stages)
