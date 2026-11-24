@@ -48,6 +48,11 @@ jobs:
           pip install -e ".[dev,test]"
           pip install locust
 
+      - name: Inspect Runner Dependency Versions
+        run: |
+          echo "=== Host Runner Key Dependency Versions ==="
+          python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost|evidently)==" | sort | tee runner_deps.txt
+
       - name: Run Unit Test Suite
         run: |
           python -m pytest tests/unit/ -v
@@ -85,6 +90,13 @@ jobs:
           DOCKER_IMAGE_SIZE=$(docker images "$IMAGE_NAME" --format "{{.Size}}")
           echo "DOCKER_IMAGE_SIZE=$DOCKER_IMAGE_SIZE" >> $GITHUB_ENV
           echo "Measured Local Uncompressed Docker Image Size: $DOCKER_IMAGE_SIZE"
+
+      - name: Verify Container Dependency Parity
+        run: |
+          echo "=== Container Image Key Dependency Versions ==="
+          docker run --rm "$IMAGE_NAME" python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost|evidently)==" | sort | tee container_deps.txt
+          echo "=== Dependency Parity Check (Runner vs Container) ==="
+          diff -u runner_deps.txt container_deps.txt || echo "WARNING: Dependency version discrepancies detected between runner and container."
 
       - name: Push Container Image to GHCR (Main Branch Only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
