@@ -522,15 +522,15 @@ Continuous integration load testing is executed automatically in GitHub Actions 
 - **Resource Contention Note**: **The client (Locust) and the server (FastAPI Docker container) share the runner's CPU and memory.** Measured latencies reflect this co-located execution topology.
 - **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; it establishes its own decision threshold (e.g. 0.3486). Measured latency numbers refer strictly to this bootstrapped candidate model, whereas the optimal 0.3254 threshold, 75.13% recall, and 0.847 ROC-AUC refer to the fully trained production model.
 - **Authentication**: Authenticated via dynamic runtime `X-API-Key` injected into container environment variables and client headers.
-- **Test Protocol**:
-  - 10-second warm-up phase (10 concurrent users).
-  - 3 consecutive 30-second benchmark runs with **25 concurrent users** (ramp rate: 5 users/sec, 0s think time). Each 30-second run includes a ~5s ramp-up.
-  - Metrics are aggregated across all 3 iterations, where the reported median is taken over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
+- **Queueing & Latency Dynamics**: At saturation (25 users), latency is dominated by queueing ($L \approx N \times T_{\text{service}}$, where $T_{\text{service}} \approx 9\text{ ms}$ based on server throughput capacity). Therefore, the 25-user P50/P95 latency mostly reflects queue waiting time in the runner's threadpool. To evaluate latency under lower queueing pressure alongside maximum throughput, two distinct profiles are tested:
+  1. **Non-Saturated Load (5 Concurrent Users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Demonstrates service time under minimal queueing contention.
+  2. **Saturated / Max Throughput (25 Concurrent Users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Measures peak throughput and queue saturation behavior.
+  - Metrics are aggregated across all 3 iterations per profile, reporting the median over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
 
 ### Measured Benchmark Numbers:
 - **Runner Hardware Specifications**: *dynamically queried at runtime via `nproc` and `free -m`*
 - **Docker Image Footprint**: *local uncompressed size, measured live via `docker images` during CI build*
-- **Live Measured Benchmarks**: **benchmarks: see latest job summary** *(empirical numbers, P50/P95 latency percentiles, throughput, and error rates are captured directly from runner execution and published to the GitHub Actions Job Summary and workflow artifacts)*
+- **Live Measured Benchmarks**: **benchmarks: see latest job summary** *(empirical numbers, P50/P95 latency percentiles, throughput, and error rates for both non-saturated 5-user and saturated 25-user profiles are captured directly from runner execution and published to the GitHub Actions Job Summary and workflow artifacts)*
 
 ---
 
