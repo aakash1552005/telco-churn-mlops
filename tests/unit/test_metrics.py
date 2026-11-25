@@ -1,5 +1,6 @@
 """Unit tests for Prometheus metrics collection and exposition."""
 
+import os
 import re
 from typing import Any, Dict
 
@@ -20,6 +21,10 @@ def ensure_production_model_loaded() -> None:
     try:
         prediction_service.load_production_model()
     except Exception as e:
+        if os.getenv("CI"):
+            pytest.fail(
+                f"CI failure: Production model must be loaded in CI environment: {e}"
+            )
         pytest.skip(
             f"Skipping metrics tests: Production model not available in MLflow: {e}"
         )

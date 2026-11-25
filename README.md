@@ -15,7 +15,7 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Telemetry-E6522C?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![AWS ECR](https://img.shields.io/badge/AWS-ECR-FF9900?style=flat&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/ecr/)
-[![Unit Tests: 88 passed](https://img.shields.io/badge/Unit%20Tests-88%20Passed-brightgreen)](tests/unit/)
+[![Unit Tests: 87 passed](https://img.shields.io/badge/Unit%20Tests-87%20Passed-brightgreen)](tests/unit/)
 [![Integration: 1 passed](https://img.shields.io/badge/Integration-1%20Passed%20(11%20Stages)-brightgreen)](tests/integration/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -29,7 +29,9 @@
 The **Telco Customer Churn MLOps Platform** is a **production-grade machine learning operations system** engineered to automate customer retention workflows end-to-end. It demonstrates how real-world predictive models operate as resilient, versioned, observable, and continuously monitored software engineering platforms.
 
 ### Verified Architecture & Infrastructure Baseline
+
 The platform is fully operationalized with automated deployment pipelines and zero cloud-vendor lock-in:
+
 - **Container Orchestration**: Single-node **Kubernetes (Minikube)** managing containerized inference pods, NodePort routing, and Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`).
 - **CI/CD Automation**: **Jenkins LTS** declarative automation executing hermetic test suites, linting, model training, and rollout gates.
 - **Model Registry & Governance**: **MLflow** tracking parameters, metrics, run lineage, and enforcing automated production promotion gates.
@@ -37,6 +39,7 @@ The platform is fully operationalized with automated deployment pipelines and ze
 - **Cloud Registry Distribution**: **AWS Elastic Container Registry (ECR)** (`telco-churn-api` in `ap-south-1`) verifying immutable git-SHA tagged image publishing.
 
 ### Architecture Scope Clarification
+
 | Environment Layer | Current Verified Status | Future Enterprise Cloud Target |
 | :--- | :--- | :--- |
 | **Compute / Orchestration** | Local Minikube Kubernetes (Single-Node) | Managed Amazon EKS (Multi-AZ) |
@@ -53,10 +56,13 @@ This repository deliberately implements **production-oriented software design pa
 ## Problem Statement & Business Reality
 
 ### The Business Reality
+
 Customer churn is one of the highest cost drivers in the telecommunications industry. Acquiring a new customer costs 5 to 7 times more than retaining an existing one. Early detection of churn risk allows retention teams to intervene with targeted promotions, contract adjustments, or proactive customer support.
 
 ### The Engineering Challenges
+
 Training a machine learning model in an isolated Jupyter Notebook does not solve customer churn in an enterprise. Real-world machine learning fails due to:
+
 1. **Data Leakage & Inconsistency**: Preprocessing transformations fitted across entire datasets leak test distribution into training data, yielding over-optimistic validation metrics that collapse in production.
 2. **Silent Data & Concept Drift**: Customer behavior, competitor pricing, and macroeconomic conditions change over time. Models silently degrade without producing HTTP or runtime errors.
 3. **Uncontrolled Model Deployment**: Ad-hoc model replacement can accidentally promote an overfitted or degenerate model to production, causing financial loss.
@@ -120,6 +126,7 @@ Data Lineage (DVC + SHA-256)
 ## Solution Overview
 
 The platform consists of seven interconnected software subsystems:
+
 - **Data Ingestion & Integrity**: Fetches raw data, validates SHA-256 checksums, and tracks state using DVC.
 - **Validation & Transformation**: Validates 21 raw columns against schema bounds, imputes whitespace values in `TotalCharges`, and generates 49 engineered numerical and one-hot features.
 - **Deterministic Training & Evaluation**: Tunes XGBoost and Logistic Regression candidates using 5-fold Stratified Cross-Validation, optimizes classification decision thresholds along the Precision-Recall curve ($\approx 0.3254$, operational F1 = $0.6416$), and computes Brier score calibration.
@@ -192,32 +199,39 @@ flowchart TD
 ## Detailed System Architecture
 
 ### Data Layer
+
 - **Ingestion (`src/data/ingestion.py`)**: Fetches raw data from remote or local storage, validates SHA-256 checksums to guarantee uncorrupted inputs, and tracks datasets via DVC (`.dvc`).
 - **Validation (`src/data/validation.py`)**: Validates 21 raw columns against strict type schemas, verifies categorical allowable sets, flags whitespace anomalies in `TotalCharges`, and generates structured JSON validation reports.
 - **Feature Engineering (`src/data/features.py`)**: Scikit-Learn `ColumnTransformer` containing custom imputers and derived feature transformers (`charge_ratio`, `tenure_years`, `is_monthly_contract`, `has_internet`). Fitted strictly on training data (`X_train`) to prevent data leakage and serialized to `models/feature_pipeline.joblib`.
 
 ### ML Layer
+
 - **Training (`src/training/train.py`)**: Deterministic training using 5-fold Stratified Cross-Validation across candidate algorithms (XGBoost Classifier and Logistic Regression) with `RandomizedSearchCV` (`random_state=42`).
 - **Evaluation (`src/training/evaluate.py`)**: Generates classification reports, confusion matrices, ROC-AUC curves, Precision-Recall curves, Brier score calibration curves, and feature importance rankings.
 
 ### Model Governance Layer
+
 - **MLflow Tracking & Registry (`src/training/promotion.py`)**: SQLite-backed registry (`sqlite:///mlflow.db`) and local artifact store (`mlruns/`). Models are logged with complete parameters, metrics, feature schema, and dataset hash tags.
 - **Automated Promotion Policy**: Evaluates candidate models against incumbent production models using deterministic promotion criteria before updating registry stages (`Staging` $\to$ `Production` $\to$ `Archived`).
 
 ### Serving Layer
+
 - **FastAPI Application (`src/api/`)**: High-performance asynchronous REST API (`src/api/app.py`, `routes.py`, `schemas.py`) validating incoming requests with Pydantic v2.
 - **Security & Middleware (`src/api/security.py`)**: Validates incoming `X-API-Key` headers against hashed secret lists, enforces SlowAPI client rate limits (60 req/min), and emits non-PII structured JSON logs.
 
 ### Infrastructure Layer
+
 - **Containerization (`Dockerfile`, `docker-compose.yml`)**: Multi-stage Docker build producing an optimized runtime image executing under an unprivileged `appuser` (UID 10001).
 - **Orchestration (`infra/k8s/`)**: Declarative Kubernetes manifests for Minikube including `Deployment`, `Service` (NodePort), `ConfigMap`, `Secret`, Persistent Volume Claims (`telco-models-pvc`, `telco-mlflow-pvc`), Horizontal Pod Autoscaler (`hpa.yaml`), and Pod Disruption Budget (`pdb.yaml`).
 - **Cloud Registry Integration (`infra/aws/`)**: Automated PowerShell deployment scripts (`create_ecr_repo.ps1`, `push_to_ecr.ps1`) pushing immutable tags to AWS Elastic Container Registry.
 
 ### Observability Layer
+
 - **Prometheus Telemetry (`src/api/metrics.py`, `infra/monitoring/`)**: Custom Prometheus metrics exporter tracking prediction counts (`telco_predictions_total`), latency histograms (`telco_request_duration_seconds`), error counters, and drift gauges.
 - **Grafana Visualization (`infra/monitoring/grafana-dashboard.json`)**: Pre-provisioned Grafana dashboard visualizing API health, model version info, latency percentiles (p50, p95), memory/CPU utilization, and drift scores.
 
 ### Feedback & Retraining Layer
+
 - **Drift Detection (`src/monitoring/drift.py`)**: Computes Population Stability Index (PSI) and Wasserstein distance on numerical/categorical features against baseline data using Evidently AI.
 - **Windowed State Machine (`src/monitoring/state.py`)**: Tracks drift across persistent state (`reports/monitoring_state.json`), requiring **3 consecutive drifted windows** before triggering retraining.
 - **Webhook Trigger (`src/monitoring/jenkins_trigger.py`)**: Sends authenticated REST requests to Jenkins to initiate automated retraining jobs.
@@ -282,7 +296,7 @@ flowchart TD
 | **Statistical Drift Detection** | **Evidently AI** | Specialized data and concept drift metrics (PSI, Wasserstein). | Quantifies distribution shift between baseline reference data and streaming prediction windows. |
 | **Drift Thrashing Prevention** | **Custom State Machine (`state.py`)** | Lightweight JSON-backed consecutive window tracker with file locks. | Prevents false-alarm retraining by requiring 3 consecutive drifted evaluation windows. |
 | **Code Quality & Static Analysis** | **Black, isort, Flake8, mypy** | Comprehensive Python formatting, style enforcement, and static typing. | Enforces PEP 8 compliance, consistent formatting, and strict type safety across all `src/` modules. |
-| **Test Automation** | **Pytest & Pytest-Cov** | Flexible testing framework with fixtures and coverage reporting. | Executes 88 unit tests and an end-to-end hermetic integration suite in under 55 seconds. |
+| **Test Automation** | **Pytest & Pytest-Cov** | Flexible testing framework with fixtures and coverage reporting. | Executes 87 unit tests and an end-to-end hermetic integration suite in under 55 seconds. |
 
 ---
 
@@ -306,6 +320,7 @@ Quality & Tests:  Pytest, Pytest-Cov, Flake8, Black, isort, mypy
 ## Dataset
 
 The project uses the standard **IBM Telco Customer Churn** dataset:
+
 - **Total Records**: 7,043 customer accounts
 - **Total Raw Columns**: 21 features (20 predictors + 1 binary target)
 - **Target Variable**: `Churn` ("Yes" / "No")
@@ -340,7 +355,8 @@ Raw Data Ingestion ──> SHA-256 Checksum ──> DVC Tracking ──> Schema 
 
 The feature engineering pipeline transforms raw records into a fixed **49-feature numerical matrix**:
 
-### Transformations Applied:
+### Transformations Applied
+
 1. **Numerical Imputation & Scaling**: `TotalChargesImputer` converts whitespace strings to `0.0` and casts to float. Numerical features (`tenure`, `MonthlyCharges`, `TotalCharges`) are passed through standard scaling pipelines.
 2. **Categorical One-Hot Encoding**: Categorical features are encoded using `OneHotEncoder(handle_unknown="ignore", sparse_output=False)`.
 3. **Domain-Specific Feature Engineering**:
@@ -355,6 +371,7 @@ The feature engineering pipeline transforms raw records into a fixed **49-featur
 ## Deterministic Model Training
 
 Deterministic training is executed via `src/training/train.py`:
+
 - **Cross-Validation**: 5-fold `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
 - **Search Strategy**: `RandomizedSearchCV(n_iter=20, scoring="roc_auc", cv=5, random_state=42)`
 - **Candidate Models Evaluated**:
@@ -373,7 +390,7 @@ The following metrics represent the **verified model evaluation and benchmarking
 | **Logistic Regression** | 0.8460 | 0.8422 | 0.6032 | — | — | — | — | — |
 | **XGBoost Classifier** (Winner) | **0.8497** | **0.8469** | **0.5898** | **0.3254** | **0.6416** | **0.5598** | **0.7513** | **0.1351** |
 
-### Verified Test Set Performance Breakdown (XGBoost):
+### Verified Test Set Performance Breakdown (XGBoost)
 
 | Metric | At Default Threshold (0.50) | At Optimized Threshold (0.3254) | Operational Impact |
 | :--- | :---: | :---: | :--- |
@@ -385,7 +402,7 @@ The following metrics represent the **verified model evaluation and benchmarking
 | **Precision** | **67.01%** | **55.98%** | Controlled trade-off for higher recall sensitivity |
 | **F1 Score** | **0.5898** | **0.6416** | Maximizes composite operational performance |
 
-### Verified Model Evaluation Visualizations:
+### Verified Model Evaluation Visualizations
 
 <p align="center">
   <img src="docs/images/confusion_matrix.png" alt="Confusion Matrix" width="48%" />
@@ -407,15 +424,21 @@ The following metrics represent the **verified model evaluation and benchmarking
 
 ## Decision Threshold Optimization
 
-In telecommunication churn prediction, false negatives (missing a churning customer) are significantly more costly than false positives (proactively offering a discount or outreach to a retained customer).
+In telecommunication churn prediction, false negatives (missing an actual churning customer) are significantly more costly than false positives (proactively offering a discount or retention outreach to a loyal customer).
 
-- **Default Threshold (0.50)**: Misses over **47.3%** of churning customers (Recall = 0.5267).
-- **Optimized Threshold ($\approx 0.3254$)**: Sweeps 100 threshold points along the Precision-Recall curve to maximize the operational F1 score:
-  - **Recall**: Increasing churn recall from 52.67% to 75.13% (+22.46 percentage points, +42.65% relative).
-  - **F1 Score**: Improves from **0.5898 $\to$ 0.6416** (+5.18 points).
+Evaluating the winning XGBoost classifier output directly:
 
-> [!NOTE]
-> **Methodological Transparency & Calibration Practice**: The optimal threshold was calculated during benchmark evaluation. In production systems, threshold tuning is computed on an internal cross-validation holdout set to prevent calibration bias.
+- **At Default Decision Threshold (0.50)**:
+  - **Recall**: `52.67%` (0.5267 — missing 177 churning customers)
+  - **Precision**: `67.01%` (0.6701)
+  - **F1 Score**: `0.5898`
+- **At Optimized Decision Boundary (0.3254)**:
+  - **Recall**: `75.13%` (0.7513 — identifying 281 churners, cutting missed churn from 177 to 93)
+  - **Precision**: `55.98%` (0.5598)
+  - **F1 Score**: `0.6416` (composite operational maximum)
+
+> [!WARNING]
+> **Data Split & Optimistic Evaluation Notice**: The `0.3254` decision threshold was selected by sweeping the Precision-Recall curve directly on the held-out **test split** (`data/processed/test.csv`). Because the threshold was optimized on the test data itself, the resulting recall (75.13%) and F1 (0.6416) may be optimistic due to threshold selection bias. In enterprise production systems, decision threshold tuning should be performed strictly on an independent validation fold or calibration split prior to final untouched test evaluation.
 
 ---
 
@@ -427,13 +450,16 @@ Model tracking and promotion are governed through `src/training/promotion.py` an
 Experiment Run ──> Log Parameters & Metrics ──> Register Model ──> Automated Promotion Gate ──> Set Stage: Production
 ```
 
-### Automated Promotion Policy Rules (`models/promotion_policy.json`):
+### Automated Promotion Policy Rules (`models/promotion_policy.json`)
+
 To replace the current incumbent `Production` model, a newly trained candidate must satisfy all three criteria simultaneously:
+
 1. **$\Delta \text{F1} \ge +0.0100$** (F1 score must improve by at least 1.0%).
 2. **$\Delta \text{Precision} \ge -0.0200$** (Precision drop must not exceed 2.0%).
 3. **$\Delta \text{Recall} \ge 0.0000$** (Recall must not decrease).
 
-### Bootstrap Rule:
+### Bootstrap Rule
+
 When the model registry is empty (initial deployment), Version 1 is automatically promoted to `Production` to establish the initial baseline.
 
 ---
@@ -442,14 +468,16 @@ When the model registry is empty (initial deployment), Version 1 is automaticall
 
 The inference service (`src/api/app.py`) provides high-performance prediction serving:
 
-### Key Endpoints:
+### Key Endpoints
+
 - `POST /predict`: Main prediction endpoint. Requires `X-API-Key` header.
 - `GET /health`: Comprehensive service health, model version, and loaded status.
 - `GET /health/liveness`: Kubernetes liveness probe endpoint (`{"status": "alive"}`).
 - `GET /health/readiness`: Kubernetes readiness probe endpoint (`{"status": "ready"}`).
 - `GET /metrics`: Prometheus telemetry scraping endpoint.
 
-### Sample Prediction Request:
+### Sample Prediction Request
+
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
@@ -478,7 +506,8 @@ curl -X POST http://localhost:8000/predict \
   }'
 ```
 
-### Sample Prediction Response:
+### Sample Prediction Response
+
 ```json
 {
   "customerID": "7590-VHVEG",
@@ -492,16 +521,52 @@ curl -X POST http://localhost:8000/predict \
 
 ---
 
-## Docker Multi-Stage Containerization
+## Docker Multi-Stage Containerization & Security Audit
 
-The container image is built via a hardened multi-stage `Dockerfile`:
+The container image is built via a production-hardened multi-stage `Dockerfile` audited against container security and deployment best practices:
 
-- **Stage 1 (Builder)**: Installs build dependencies and wheels in an isolated build layer.
-- **Stage 2 (Runtime)**: Minimal `python:3.12-slim` base image copying only production dependencies and source code.
-- **Security Hardening**:
-  - Runs as an unprivileged user `appuser` (UID 10001, GID 10001).
-  - Docker `HEALTHCHECK` probing `GET /health/liveness` every 30s.
-  - Image metadata tagged with OCI labels (`GIT_COMMIT`, `BUILD_DATE`, `VERSION`).
+- **Multi-Stage Architecture**:
+  - **Stage 1 (Builder)**: Pinned base `python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63`. Installs build dependencies and wheels in an isolated virtual environment (`/opt/venv`), stripping compilers and dev tooling from the final artifact.
+  - **Stage 2 (Runtime)**: Minimal runner stage copying only the compiled virtualenv and `src/` application code.
+- **Security & Privilege Isolation**:
+  - Dedicated unprivileged system user and group `appuser:appgroup` (UID `10001`, GID `10001`). Root access is dropped via `USER appuser`.
+  - Zero hardcoded secrets, keys, or credentials baked into the image. API keys and environment configurations are injected strictly at runtime via environment variables or volume mounts.
+- **OCI Metadata & Healthcheck**:
+  - Image metadata fully labeled with OpenContainers (OCI) specification tags (`GIT_COMMIT`, `BUILD_DATE`, `VERSION`).
+  - Active `HEALTHCHECK` probing `GET /health/readiness` with 10s interval, 5s timeout, and 3 retries.
+
+---
+
+## Container & Load Benchmarks (Automated CI)
+
+Continuous integration load testing is executed automatically in GitHub Actions on every pull request and push to `main` via headless [Locust](https://locust.io/):
+
+### Execution Topology & Test Conditions
+
+- **Environment**: GitHub-hosted Ubuntu runner. Hardware specs are dynamically captured at runtime via `nproc` (logical vCPUs) and `free -m` (available RAM) rather than hardcoded assumptions.
+- **Resource Contention Note**: **The client (Locust) and the server (FastAPI Docker container) share the runner's CPU and memory.** Measured latencies reflect this co-located execution topology.
+- **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; it establishes its own decision threshold (e.g. 0.3486). Measured latency numbers refer strictly to this bootstrapped candidate model, whereas the optimal 0.3254 threshold, 75.13% recall, and 0.847 ROC-AUC refer to the fully trained production model.
+- **Authentication**: Authenticated via dynamic runtime `X-API-Key` injected into container environment variables and client headers.
+- **Queueing Dynamics & Test Profiles**: With zero think time, any continuous concurrent traffic saturates the single-worker process. Response latency is therefore dominated by queueing ($L \approx N \times T_{\text{service}}$, where measured service time is $\approx 10\text{ ms}$ per request under zero queueing). Three distinct profiles are evaluated:
+  1. **Low concurrency (1 user)**: 10s warm-up, 3 x 30s runs (ramp rate: 1 user/sec, 0s think time). Measures per-request service time with zero queue waiting.
+  2. **Low concurrency (5 users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Evaluates response latency under light concurrency.
+  3. **High concurrency (25 users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Evaluates queue saturation behavior under heavy concurrency.
+  - Metrics are aggregated across all 3 iterations per profile, reporting the median over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
+- **Shared Runner Variance Note**: Throughput on shared GitHub Actions runners varies between runs due to virtualization host load and noisy neighbours (for example, the identical 25-user profile measured 108 req/s in an earlier run and 64 req/s in a subsequent run on identical code). Performance optimizations must therefore always be compared within a single job execution.
+
+### Measured Benchmark Numbers
+
+- **Runner Environment**: GitHub-hosted Ubuntu (`4` vCPUs, `15983 MB` RAM, dynamically queried via `nproc` and `free -m`)
+- **Docker Image Footprint**: `2.54GB` (local uncompressed size, measured live via `docker images` during CI build)
+- **Live Measured Benchmarks (CI Run `45531392995`)**:
+
+| Load Profile | Concurrency | P50 Latency (Median) | P95 Latency | Throughput (Requests/s) | Error Rate | Total Requests |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Low concurrency (1 user)** | 1 user | **`10.0 ms`** | **`11.0 ms`** | **`98.05 req/s`** | **`0.0%`** | `8,585` |
+| **Low concurrency (5 users)** | 5 users | **`48.0 ms`** | **`67.0 ms`** | **`97.44 req/s`** | **`0.0%`** | `8,465` |
+| **High concurrency (25 users)** | 25 users | **`230.0 ms`** | **`400.0 ms`** | **`97.30 req/s`** | **`0.0%`** | `8,413` |
+
+*Note on Latency & Queueing*: Across all 9 runs, zero request failures or exceptions occurred (`0.0% error rate` on 25,463 total evaluation requests). The 1-user profile demonstrates true per-request service time ($\approx 10\text{ ms}$), while the 5-user ($48\text{ ms}$) and 25-user ($230\text{ ms}$) profiles illustrate queue waiting time scaling linearly with concurrent user load ($L \approx N \times T_{\text{service}}$) while throughput remains constant at the single-worker saturation ceiling ($\approx 97\text{--}98\text{ req/s}$). See the latest GitHub Actions job summary and uploaded `load-benchmark-results` artifact for detailed per-iteration CSV logs.
 
 ---
 
@@ -532,7 +597,8 @@ Deploys on a local single-node **Minikube** cluster using declarative manifests 
     └─────────────────────────┘                       └─────────────────────────┘
 ```
 
-### Kubernetes Resources Implemented:
+### Kubernetes Resources Implemented
+
 - `deployment.yaml`: Replicas with rolling update strategy (`maxSurge: 1`, `maxUnavailable: 0`), liveness/readiness probes, and resource limits (`cpu: 500m`, `memory: 512Mi`).
 - `service.yaml`: NodePort service exposing port 30800.
 - `secret.yaml` & `grafana-secret.yaml`: Dedicated Kubernetes Secrets for API authentication and Grafana dashboard credentials.
@@ -551,7 +617,7 @@ The continuous integration and deployment lifecycle is automated through a decla
 | :--- | :--- | :--- |
 | **1. Checkout & Setup** | Clones repository, activates Python 3.12 environment | Environment initialized |
 | **2. Code Quality & Lint** | Runs `black --check`, `isort --check-only`, `flake8`, `mypy` | Zero style or typing errors |
-| **3. Unit Tests** | Executes full unit test suite via `pytest` | 88/88 tests pass |
+| **3. Unit Tests** | Executes full unit test suite via `pytest` | 87/87 tests pass |
 | **4. Integration Tests** | Runs isolated end-to-end pipeline in ephemeral environment | All 11 stages pass (<55s) |
 | **5. Data Validation** | Ingests data, validates schema and hashes | Validation report clean |
 | **6. Model Training** | Executes 5-fold CV across XGBoost & Logistic Regression | Produces candidate artifact |
@@ -568,14 +634,16 @@ The continuous integration and deployment lifecycle is automated through a decla
 
 The platform instruments both operational and machine learning telemetry:
 
-### Custom Prometheus Metrics (`src/api/metrics.py`):
+### Custom Prometheus Metrics (`src/api/metrics.py`)
+
 - `telco_predictions_total` (*Counter*): Count of predictions labeled by `decision` (`Churn` / `No Churn`) and `model_version`.
 - `telco_request_duration_seconds` (*Histogram*): Latency distribution with buckets across p50, p90, p95, p99.
 - `telco_api_errors_total` (*Counter*): Count of failed requests labeled by `endpoint` and `status_code`.
 - `telco_model_info` (*Gauge*): Information gauge recording active model version, algorithm, and threshold.
 - `telco_drift_score` (*Gauge*): Current Evidently AI dataset drift score.
 
-### Grafana Dashboard Panels (`infra/monitoring/grafana-dashboard.json`):
+### Grafana Dashboard Panels (`infra/monitoring/grafana-dashboard.json`)
+
 1. **API Service Health**: Real-time service status (UP/DOWN).
 2. **Active Production Model Version**: Gauge showing currently active model version.
 3. **Total Predictions**: Total count of processed scoring requests.
@@ -589,6 +657,7 @@ The platform instruments both operational and machine learning telemetry:
 ## Statistical Drift Detection (Evidently AI)
 
 Data drift monitoring is executed via `src/monitoring/drift.py` using **Evidently AI**:
+
 - **Drift Metrics**: Population Stability Index (PSI) for categorical features and Wasserstein distance for continuous features.
 - **Threshold**: Feature drift detected if $p\text{-value} < 0.05$ or $\text{PSI} > 0.10$. Dataset drift declared if $\ge 30\%$ of features exhibit statistical drift.
 - **Dampening State Machine (`src/monitoring/state.py`)**: Requires **3 consecutive drifted evaluation windows** before triggering automated retraining to prevent thrashing from temporary spikes.
@@ -614,7 +683,8 @@ Drift Detected ──> 3 Consecutive Windows ──> Jenkins REST API Trigger �
 
 ## Security & Fail-Fast Safety Mechanisms
 
-### System Design Rationale:
+### System Design Rationale
+
 - **Data Lineage & Checksums**: Every raw dataset is verified against SHA-256 hashes and tracked with DVC to guarantee that corrupted or modified data cannot enter downstream training.
 - **Feature Schema Enforcement**: Output column order and dimensionality (49 features) are strictly locked in `models/feature_schema.json`. This prevents catastrophic runtime errors caused by unexpected one-hot column permutations.
 - **Model Provenance**: Model artifacts are serialized with training metadata JSON recording dataset SHA-256, pipeline SHA-256, Git commit hash, and evaluation metrics for complete auditability.
@@ -648,7 +718,7 @@ The end-to-end integration test suite (`tests/integration/test_end_to_end.py`) v
 Following a comprehensive end-to-end engineering audit, the platform is verified in a clean, fully passing operational state:
 
 - **Verification Status**: 100% Operational Baseline Passed
-- **Total Unit Tests**: 88 / 88 Passed
+- **Total Unit Tests**: 87 / 87 Passed
 - **Hermetic Integration Tests**: 1 / 1 Passed (11 stages verified in isolation)
 - **Defects Remediated & Confirmed**:
   1. Provenance SHA-256 workspace path isolation fixed.
@@ -758,13 +828,15 @@ Following a comprehensive end-to-end engineering audit, the platform is verified
 
 ## Installation & Quickstart
 
-### Prerequisites:
+### Prerequisites
+
 - Python 3.12+
 - Git
 - Docker Desktop
 - Minikube & `kubectl` (for Kubernetes orchestration)
 
 ### Step 1: Clone Repository & Create Virtual Environment
+
 ```bash
 git clone https://github.com/aakash1552005/telco-churn-mlops.git
 cd telco-churn-mlops
@@ -777,6 +849,7 @@ python -m venv .venv
 ```
 
 ### Step 2: Install Dependencies
+
 ```bash
 python tasks.py install
 # Or install Streamlit demo dependencies directly:
@@ -784,6 +857,7 @@ python tasks.py install
 ```
 
 ### Step 3: Configure Environment Variables
+
 ```bash
 # Windows:
 Copy-Item .env.example .env
@@ -804,7 +878,7 @@ streamlit run streamlit_app.py
 # 1. Run Static Analysis & Linting (black, isort, flake8, mypy)
 python tasks.py lint
 
-# 2. Run Full Unit Test Suite (88 tests)
+# 2. Run Full Unit Test Suite (87 tests)
 python tasks.py test
 
 # 3. Run Hermetic End-to-End Integration Test (11 stages)
@@ -841,7 +915,8 @@ python tasks.py docker-run
 python tasks.py drift
 ```
 
-### Deploying to Kubernetes (Minikube):
+### Deploying to Kubernetes (Minikube)
+
 ```powershell
 # Start Minikube
 minikube start
@@ -872,6 +947,7 @@ kubectl apply -f infra/k8s/grafana-service.yaml
 ## Known Limitations & Trade-Offs
 
 In the spirit of engineering transparency, the following constraints reflect the local single-node architecture:
+
 1. **Single-Node Minikube Runtime**: Employs `hostPath` persistent volumes on local disk. Cloud-native failover, multi-AZ replication, and managed EBS/EFS CSI drivers are not present in this local runtime.
 2. **Local SQLite MLflow Backend**: Uses SQLite (`sqlite:///mlflow.db`) with file-backed artifact storage (`mlruns/`). SQLite does not support distributed concurrent writes across multi-worker clusters.
 3. **Simulated Drift Evaluation**: In local CI testing, drift is evaluated using synthetic batch perturbations. Live enterprise systems would stream prediction payloads from Kafka/Kinesis.
@@ -909,6 +985,7 @@ The following architecture represents the target design for migrating this local
 ## Author & Contact
 
 **Aakash S. S.**
+
 - **Email**: [aakash1552005@gmail.com](mailto:aakash1552005@gmail.com)
 - **LinkedIn**: [linkedin.com/in/aakash-s-s-88b91a301](https://www.linkedin.com/in/aakash-s-s-88b91a301/)
 - **Website**: [aakash1552005.github.io](https://aakash1552005.github.io/)
