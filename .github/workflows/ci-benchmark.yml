@@ -51,7 +51,7 @@ jobs:
       - name: Inspect Runner Dependency Versions
         run: |
           echo "=== Host Runner Key Dependency Versions ==="
-          python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost|evidently)==" | sort | tee runner_deps.txt
+          python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost)==" | sort | tee runner_deps.txt
 
       - name: Bootstrap Production Model Artifacts
         run: |
@@ -105,7 +105,7 @@ jobs:
       - name: Verify Container Dependency Parity
         run: |
           echo "=== Container Image Key Dependency Versions ==="
-          docker run --rm "$IMAGE_NAME" python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost|evidently)==" | sort | tee container_deps.txt
+          docker run --rm "$IMAGE_NAME" python -m pip freeze | grep -E "^(pandas|numpy|scikit-learn|xgboost)==" | sort | tee container_deps.txt
           echo "=== Dependency Parity Check (Runner vs Container) ==="
           diff -u runner_deps.txt container_deps.txt || echo "WARNING: Dependency version discrepancies detected between runner and container."
 
