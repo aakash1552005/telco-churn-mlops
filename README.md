@@ -557,16 +557,16 @@ Continuous integration load testing is executed automatically in GitHub Actions 
 ### Measured Benchmark Numbers
 
 - **Runner Environment**: GitHub-hosted Ubuntu (`4` vCPUs, `15983 MB` RAM, dynamically queried via `nproc` and `free -m`)
-- **Docker Image Footprint**: `2.54GB` (local uncompressed size, measured live via `docker images` during CI build)
-- **Live Measured Benchmarks (CI Run `45531392995`)**:
+- **Docker Image Footprint**: `1.64GB` (local uncompressed size, reduced by 900 MB from 2.54GB by decoupling offline training dependencies, measured live via `docker images` during CI build)
+- **Live Measured Benchmarks (CI Run `45549627031`)**:
 
 | Load Profile | Concurrency | P50 Latency (Median) | P95 Latency | Throughput (Requests/s) | Error Rate | Total Requests |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Low concurrency (1 user)** | 1 user | **`10.0 ms`** | **`11.0 ms`** | **`98.05 req/s`** | **`0.0%`** | `8,585` |
-| **Low concurrency (5 users)** | 5 users | **`48.0 ms`** | **`67.0 ms`** | **`97.44 req/s`** | **`0.0%`** | `8,465` |
-| **High concurrency (25 users)** | 25 users | **`230.0 ms`** | **`400.0 ms`** | **`97.30 req/s`** | **`0.0%`** | `8,413` |
+| **Low concurrency (1 user)** | 1 user | **`11.0 ms`** | **`13.0 ms`** | **`85.75 req/s`** | **`0.0%`** | `7,487` |
+| **Low concurrency (5 users)** | 5 users | **`49.0 ms`** | **`63.0 ms`** | **`94.92 req/s`** | **`0.0%`** | `8,238` |
+| **High concurrency (25 users)** | 25 users | **`230.0 ms`** | **`410.0 ms`** | **`96.45 req/s`** | **`0.0%`** | `8,328` |
 
-*Note on Latency & Queueing*: Across all 9 runs, zero request failures or exceptions occurred (`0.0% error rate` on 25,463 total evaluation requests). The 1-user profile demonstrates true per-request service time ($\approx 10\text{ ms}$), while the 5-user ($48\text{ ms}$) and 25-user ($230\text{ ms}$) profiles illustrate queue waiting time scaling linearly with concurrent user load ($L \approx N \times T_{\text{service}}$) while throughput remains constant at the single-worker saturation ceiling ($\approx 97\text{--}98\text{ req/s}$). See the latest GitHub Actions job summary and uploaded `load-benchmark-results` artifact for detailed per-iteration CSV logs.
+*Note on Latency & Queueing*: Across all 9 runs, zero request failures or exceptions occurred (`0.0% error rate` on 24,053 total evaluation requests). The 1-user profile demonstrates true per-request service time ($\approx 11\text{ ms}$), while the 5-user ($49\text{ ms}$) and 25-user ($230\text{ ms}$) profiles illustrate queue waiting time scaling linearly with concurrent user load ($L \approx N \times T_{\text{service}}$) while throughput remains constant at the single-worker saturation ceiling ($\approx 85\text{--}96\text{ req/s}$). See the latest GitHub Actions job summary and uploaded `load-benchmark-results` artifact for detailed per-iteration CSV logs.
 
 ---
 

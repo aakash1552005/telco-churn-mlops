@@ -34,7 +34,9 @@ COPY pyproject.toml .
 
 # Install dependencies into virtual environment (excluding secrets or dev tools)
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir . && \
+    find /opt/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/venv -type f -name "*.pyc" -delete 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # Stage 2: Production Runner Stage
