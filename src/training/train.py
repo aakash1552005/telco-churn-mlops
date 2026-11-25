@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -59,6 +60,28 @@ def get_git_commit_hash() -> str:
     return "unknown"
 
 
+@lru_cache(maxsize=16)
+def load_cached_feature_schema(path_str: str) -> Tuple[List[str], set]:
+    """Load and cache expected feature list and feature set from JSON schema artifact.
+
+    Cached in-memory to prevent repeated disk I/O and set allocation on single-row inference requests.
+    """
+    path = Path(path_str)
+    if not path.exists():
+        err_msg = (
+            f"Feature schema artifact '{path}' not found. "
+            f"Run Phase 6 feature engineering pipeline first."
+        )
+        logger.error(err_msg)
+        raise FileNotFoundError(err_msg)
+
+    with open(path, "r", encoding="utf-8") as f:
+        schema_data = json.load(f)
+
+    features = schema_data.get("features", [])
+    return features, set(features)
+
+
 def validate_feature_schema(
     df: pd.DataFrame,
     schema_path: Optional[Path] = None,
@@ -79,19 +102,17 @@ def validate_feature_schema(
         ValueError: If feature count, names, or ordering mismatch schema.
     """
     path = schema_path or Path(get_settings().FEATURE_SCHEMA_PATH)
-    if not path.exists():
-        err_msg = (
-            f"Feature schema artifact '{path}' not found. "
-            f"Run Phase 6 feature engineering pipeline first."
-        )
-        logger.error(err_msg)
-        raise FileNotFoundError(err_msg)
+    expected_features, expected_set = load_cached_feature_schema(str(path.resolve()))
+    actual_features = [col for col in df.columns if col != TARGET_COLUMN]
 
-    with open(path, "r", encoding="utf-8") as f:
-        schema_data = json.load(f)
-
-    expected_features: List[str] = schema_data.get("features", [])
-    actual_features: List[str] = [col for col in df.columns if col != TARGET_COLUMN]
+    # Fast path: check exact equality directly (O(N) string comparisons without set allocations)
+    if actual_features == expected_features:
+        if log_success:
+            logger.info(
+                f"Feature schema alignment validated successfully "
+                f"({len(expected_features)} features)."
+            )
+        return expected_features
 
     # Check 1: Feature Count Mismatch
     if len(actual_features) != len(expected_features):
@@ -103,7 +124,6 @@ def validate_feature_schema(
         raise ValueError(err_msg)
 
     # Check 2: Feature Set Difference
-    expected_set = set(expected_features)
     actual_set = set(actual_features)
     if expected_set != actual_set:
         missing = sorted(list(expected_set - actual_set))
@@ -113,19 +133,11 @@ def validate_feature_schema(
         raise ValueError(err_msg)
 
     # Check 3: Feature Order Mismatch
-    if actual_features != expected_features:
-        err_msg = (
-            "Feature schema column order mismatch. Silent column reordering detected."
-        )
-        logger.error(err_msg)
-        raise ValueError(err_msg)
-
-    if log_success:
-        logger.info(
-            f"Feature schema alignment validated successfully "
-            f"({len(expected_features)} features)."
-        )
-    return expected_features
+    err_msg = (
+        "Feature schema column order mismatch. Silent column reordering detected."
+    )
+    logger.error(err_msg)
+    raise ValueError(err_msg)
 
 
 def log_class_balance(y: pd.Series) -> Dict[str, Any]:
