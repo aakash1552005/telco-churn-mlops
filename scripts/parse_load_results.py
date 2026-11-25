@@ -170,7 +170,7 @@ def main() -> None:
 | Run 3 | `{profile_25u['runs'][2]['requests']}` | `{profile_25u['runs'][2]['p50_ms']} ms` | `{profile_25u['runs'][2]['p95_ms']} ms` | `{profile_25u['runs'][2]['rps']} req/s` | `{profile_25u['runs'][2]['error_rate_pct']}%` |
 | **Median** | `{m25['total_requests_served']} (Total)` | **`{m25['median_p50_ms']} ms`** | **`{m25['median_p95_ms']} ms`** | **`{m25['median_rps']} req/s`** | **`{m25['median_error_rate_pct']}%`** |
 
-> **Note on Latency & Queueing**: At saturation, response latency is dominated by queueing ($L \\approx N \\times T_{\\text{{service}}}$, where $T_{\\text{{service}}} \\approx 9.2\\text{{ ms}}$ based on $\\sim 108\\text{{ req/s}}$ throughput). The 25-user P50/P95 latency mostly reflects queue wait time in the threadpool, whereas the 5-user profile illustrates latency under lower queueing pressure.
+> **Note on Latency & Queueing**: At saturation, response latency is dominated by queueing (L ~= N * T_service, where T_service ~= 9.2 ms based on ~108 req/s throughput). The 25-user P50/P95 latency mostly reflects queue wait time in the threadpool, whereas the 5-user profile illustrates latency under lower queueing pressure.
 """
 
     print(md_content)
