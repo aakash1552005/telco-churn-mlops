@@ -528,9 +528,16 @@ Continuous integration load testing is executed automatically in GitHub Actions 
   - Metrics are aggregated across all 3 iterations per profile, reporting the median over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
 
 ### Measured Benchmark Numbers:
-- **Runner Hardware Specifications**: *dynamically queried at runtime via `nproc` and `free -m`*
-- **Docker Image Footprint**: *local uncompressed size, measured live via `docker images` during CI build*
-- **Live Measured Benchmarks**: **benchmarks: see latest job summary** *(empirical numbers, P50/P95 latency percentiles, throughput, and error rates for both non-saturated 5-user and saturated 25-user profiles are captured directly from runner execution and published to the GitHub Actions Job Summary and workflow artifacts)*
+- **Runner Environment**: GitHub-hosted Ubuntu (`4` vCPUs, `15983 MB` RAM, dynamically queried via `nproc` and `free -m`)
+- **Docker Image Footprint**: `2.54GB` (local uncompressed size, measured live via `docker images` during CI build)
+- **Live Measured Benchmarks (CI Run `45527893472`)**:
+
+| Load Profile | Concurrency | P50 Latency (Median) | P95 Latency | Throughput (Requests/s) | Error Rate | Total Requests |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Non-Saturated Load** | 5 users | **`72.0 ms`** | **`100.0 ms`** | **`65.94 req/s`** | **`0.0%`** | `5,690` |
+| **Saturated / Max Throughput** | 25 users | **`350.0 ms`** | **`550.0 ms`** | **`64.41 req/s`** | **`0.0%`** | `5,612` |
+
+*Note on Latency & Queueing*: Across runs, zero request failures or exceptions occurred (`0.0% error rate` on 11,302 total evaluation requests). At 25 users, latency scales with queueing ($L \approx N \times T_{\text{service}}$), whereas the 5-user profile demonstrates the baseline response latency under low contention. See the latest GitHub Actions job summary and uploaded `load-benchmark-results` artifact for detailed per-iteration CSV logs.
 
 ---
 
