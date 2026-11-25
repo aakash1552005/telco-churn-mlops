@@ -522,22 +522,17 @@ Continuous integration load testing is executed automatically in GitHub Actions 
 - **Resource Contention Note**: **The client (Locust) and the server (FastAPI Docker container) share the runner's CPU and memory.** Measured latencies reflect this co-located execution topology.
 - **Model Context**: The CI model is bootstrapped with `n_iter=2` for fast test execution; it establishes its own decision threshold (e.g. 0.3486). Measured latency numbers refer strictly to this bootstrapped candidate model, whereas the optimal 0.3254 threshold, 75.13% recall, and 0.847 ROC-AUC refer to the fully trained production model.
 - **Authentication**: Authenticated via dynamic runtime `X-API-Key` injected into container environment variables and client headers.
-- **Queueing & Latency Dynamics**: At saturation (25 users), latency is dominated by queueing ($L \approx N \times T_{\text{service}}$, where $T_{\text{service}} \approx 9\text{ ms}$ based on server throughput capacity). Therefore, the 25-user P50/P95 latency mostly reflects queue waiting time in the runner's threadpool. To evaluate latency under lower queueing pressure alongside maximum throughput, two distinct profiles are tested:
-  1. **Non-Saturated Load (5 Concurrent Users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Demonstrates service time under minimal queueing contention.
-  2. **Saturated / Max Throughput (25 Concurrent Users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Measures peak throughput and queue saturation behavior.
+- **Queueing Dynamics & Test Profiles**: With zero think time, any continuous concurrent traffic saturates the single-worker process. Response latency is therefore dominated by queueing ($L \approx N \times T_{\text{service}}$, where measured service time is $\approx 15\text{ ms}$ per request in this run). Three distinct profiles are evaluated:
+  1. **Low concurrency (1 user)**: 10s warm-up, 3 x 30s runs (ramp rate: 1 user/sec, 0s think time). Measures per-request service time with zero queue waiting.
+  2. **Low concurrency (5 users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Evaluates response latency under light concurrency.
+  3. **High concurrency (25 users)**: 10s warm-up, 3 x 30s runs (ramp rate: 5 users/sec, 0s think time). Evaluates queue saturation behavior under heavy concurrency.
   - Metrics are aggregated across all 3 iterations per profile, reporting the median over the three runs' per-run percentiles (median P50, median P95, median throughput, and median error rate).
+- **Shared Runner Variance Note**: Throughput on shared GitHub Actions runners varies between runs due to virtualization host load and noisy neighbours (for example, the identical 25-user profile measured 108 req/s in an earlier run and 64 req/s in a subsequent run on identical code). Performance optimizations must therefore always be compared within a single job execution.
 
 ### Measured Benchmark Numbers:
 - **Runner Environment**: GitHub-hosted Ubuntu (`4` vCPUs, `15983 MB` RAM, dynamically queried via `nproc` and `free -m`)
 - **Docker Image Footprint**: `2.54GB` (local uncompressed size, measured live via `docker images` during CI build)
-- **Live Measured Benchmarks (CI Run `45527893472`)**:
-
-| Load Profile | Concurrency | P50 Latency (Median) | P95 Latency | Throughput (Requests/s) | Error Rate | Total Requests |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Non-Saturated Load** | 5 users | **`72.0 ms`** | **`100.0 ms`** | **`65.94 req/s`** | **`0.0%`** | `5,690` |
-| **Saturated / Max Throughput** | 25 users | **`350.0 ms`** | **`550.0 ms`** | **`64.41 req/s`** | **`0.0%`** | `5,612` |
-
-*Note on Latency & Queueing*: Across runs, zero request failures or exceptions occurred (`0.0% error rate` on 11,302 total evaluation requests). At 25 users, latency scales with queueing ($L \approx N \times T_{\text{service}}$), whereas the 5-user profile demonstrates the baseline response latency under low contention. See the latest GitHub Actions job summary and uploaded `load-benchmark-results` artifact for detailed per-iteration CSV logs.
+- **Live Measured Benchmarks**: *benchmarks: see latest job summary*
 
 ---
 

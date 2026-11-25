@@ -157,43 +157,61 @@ jobs:
             exit 1
           fi
 
-      - name: Execute Headless Locust Load Test (Dual Profiles)
+      - name: Execute Headless Locust Load Test (Three Concurrency Profiles)
         env:
           API_KEY: ${{ env.TEST_API_KEY }}
         run: |
           echo "=========================================================="
-          echo "Profile 1: Non-Saturated Latency Benchmark (5 Users)"
+          echo "Profile 1: Low Concurrency - No Queueing (1 User)"
           echo "=========================================================="
-          echo "--- 1.1 Warm-up Phase (10s, 5 users) ---"
+          echo "--- 1.1 Warm-up Phase (10s, 1 user) ---"
+          locust -f tests/load/locustfile.py --headless -u 1 -r 1 --run-time 10s --host http://localhost:8000 --exit-code-on-error 0
+
+          echo "--- 1.2 Run 1 (30s, 1 user) ---"
+          locust -f tests/load/locustfile.py --headless -u 1 -r 1 --run-time 30s --host http://localhost:8000 --csv=reports/load/u1_run1 --exit-code-on-error 0
+
+          echo "--- 1.3 Run 2 (30s, 1 user) ---"
+          locust -f tests/load/locustfile.py --headless -u 1 -r 1 --run-time 30s --host http://localhost:8000 --csv=reports/load/u1_run2 --exit-code-on-error 0
+
+          echo "--- 1.4 Run 3 (30s, 1 user) ---"
+          locust -f tests/load/locustfile.py --headless -u 1 -r 1 --run-time 30s --host http://localhost:8000 --csv=reports/load/u1_run3 --exit-code-on-error 0
+
+          echo "=========================================================="
+          echo "Profile 2: Low Concurrency (5 Users)"
+          echo "=========================================================="
+          echo "--- 2.1 Warm-up Phase (10s, 5 users) ---"
           locust -f tests/load/locustfile.py --headless -u 5 -r 5 --run-time 10s --host http://localhost:8000 --exit-code-on-error 0
 
-          echo "--- 1.2 Run 1 (30s, 5 users) ---"
+          echo "--- 2.2 Run 1 (30s, 5 users) ---"
           locust -f tests/load/locustfile.py --headless -u 5 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u5_run1 --exit-code-on-error 0
 
-          echo "--- 1.3 Run 2 (30s, 5 users) ---"
+          echo "--- 2.3 Run 2 (30s, 5 users) ---"
           locust -f tests/load/locustfile.py --headless -u 5 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u5_run2 --exit-code-on-error 0
 
-          echo "--- 1.4 Run 3 (30s, 5 users) ---"
+          echo "--- 2.4 Run 3 (30s, 5 users) ---"
           locust -f tests/load/locustfile.py --headless -u 5 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u5_run3 --exit-code-on-error 0
 
           echo "=========================================================="
-          echo "Profile 2: Saturated / Max Throughput Benchmark (25 Users)"
+          echo "Profile 3: High Concurrency - Saturated Queue (25 Users)"
           echo "=========================================================="
-          echo "--- 2.1 Warm-up Phase (10s, 10 users) ---"
+          echo "--- 3.1 Warm-up Phase (10s, 10 users) ---"
           locust -f tests/load/locustfile.py --headless -u 10 -r 5 --run-time 10s --host http://localhost:8000 --exit-code-on-error 0
 
-          echo "--- 2.2 Run 1 (30s, 25 users) ---"
+          echo "--- 3.2 Run 1 (30s, 25 users) ---"
           locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u25_run1 --exit-code-on-error 0
 
-          echo "--- 2.3 Run 2 (30s, 25 users) ---"
+          echo "--- 3.3 Run 2 (30s, 25 users) ---"
           locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u25_run2 --exit-code-on-error 0
 
-          echo "--- 2.4 Run 3 (30s, 25 users) ---"
+          echo "--- 3.4 Run 3 (30s, 25 users) ---"
           locust -f tests/load/locustfile.py --headless -u 25 -r 5 --run-time 30s --host http://localhost:8000 --csv=reports/load/u25_run3 --exit-code-on-error 0
 
       - name: Parse Load Benchmarks & Generate Job Summary
         run: |
           python scripts/parse_load_results.py \
+            --u1-run1 reports/load/u1_run1_stats.csv \
+            --u1-run2 reports/load/u1_run2_stats.csv \
+            --u1-run3 reports/load/u1_run3_stats.csv \
             --u5-run1 reports/load/u5_run1_stats.csv \
             --u5-run2 reports/load/u5_run2_stats.csv \
             --u5-run3 reports/load/u5_run3_stats.csv \
