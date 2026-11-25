@@ -17,7 +17,7 @@ jobs:
     name: Alternating A/B Container Benchmark
     runs-on: ubuntu-latest
     env:
-      PYTHONPATH: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/optimized-repo
 
     steps:
       - name: Checkout PR Branch (Optimized)
@@ -71,7 +71,8 @@ jobs:
       - name: Build Baseline Docker Image
         run: |
           cd baseline-repo
-          # pyproject in main has pandas unpinned, so pin it during build if needed or build directly
+          # Ensure pandas 3 isn't pulled in baseline build for evidently compatibility
+          sed -i 's/"pandas>=2.2.0"/"pandas>=2.2.0,<3.0.0"/' pyproject.toml
           docker build -t telco-api-baseline:latest .
 
       - name: Execute Alternating A/B Locust Benchmark (3 Rounds)
