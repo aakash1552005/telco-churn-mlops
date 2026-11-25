@@ -49,13 +49,17 @@ jobs:
           cd optimized-repo
           python scripts/bootstrap_model.py
           mkdir -p reports/ab_load
-          # Set runtime mount permissions for appuser (UID 10001)
-          sudo chown -R 10001:10001 models mlruns mlflow.db || true
 
       - name: Run Unit Test Suite
         run: |
           cd optimized-repo
           python -m pytest tests/unit/ -v
+
+      - name: Set Runtime Mount Permissions
+        run: |
+          cd optimized-repo
+          # Set runtime mount permissions for appuser (UID 10001) after tests complete
+          sudo chown -R 10001:10001 models mlruns mlflow.db || true
 
       - name: Build Optimized Docker Image
         run: |
